@@ -25,7 +25,6 @@ type AppView = 'start' | 'settings' | 'game';
 export function App() {
   const [view, setView] = useState<AppView>('start');
   const [scenes, setScenes] = useState<SceneOutput[]>([]);
-  const [gameLog, setGameLog] = useState<string[]>([]);
   const [activeCharId, setActiveCharId] = useState('');
   const [activeGoapActions, setActiveGoapActions] = useState<GOAPAction[]>([]);
   const coreLoopRef = useRef<CoreLoop | null>(null);
@@ -87,27 +86,18 @@ export function App() {
       goapActions: runtimeActions,
       onScenesReady: (newScenes) => {
         setScenes(newScenes);
-        setGameLog((log) => [
-          ...log,
-          ...newScenes.map((s) =>
-            s.speaker
-              ? `${s.speaker}：${s.dialogue}`
-              : s.dialogue,
-          ),
-        ]);
       },
       onLoopComplete: () => {
         // Loop completed one cycle
       },
       onError: (error) => {
-        setGameLog((log) => [...log, `[错误] ${error.message}`]);
+        console.error('Core loop error:', error);
       },
     });
 
     coreLoopRef.current = loop;
     setView('game');
     setScenes([]);
-    setGameLog([]);
     debug.reset();
 
     // Start in background

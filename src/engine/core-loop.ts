@@ -363,16 +363,6 @@ export class CoreLoop {
     debug.setScenes(directorResult.scenes);
     this.config.onScenesReady(directorResult.scenes);
 
-    // Add to player chat
-    const playerStore = usePlayerStore.getState();
-    for (const scene of directorResult.scenes) {
-      if (scene.speaker) {
-        playerStore.addCharacterMessage(scene.speaker, scene.dialogue);
-      } else {
-        playerStore.addNarratorMessage(scene.dialogue);
-      }
-    }
-
     // Ingest narrative as memory
     for (const scene of directorResult.scenes) {
       await contextEngine.ingest({
@@ -421,16 +411,6 @@ export class CoreLoop {
     debug.setPhase('render');
     debug.setScenes(directorResult.scenes);
     this.config.onScenesReady(directorResult.scenes);
-
-    // Add to player chat history
-    const playerStore = usePlayerStore.getState();
-    for (const scene of directorResult.scenes) {
-      if (scene.speaker) {
-        playerStore.addCharacterMessage(scene.speaker, scene.dialogue);
-      } else {
-        playerStore.addNarratorMessage(scene.dialogue);
-      }
-    }
 
     // Ingest narrative as memory
     for (const scene of directorResult.scenes) {
