@@ -17,6 +17,7 @@ export interface DirectorInput {
   action: GOAPAction;
   worldEvent?: WorldEvent;
   interrupted?: boolean;
+  playerMessage?: string;
 }
 
 export interface DirectorResult {
@@ -42,6 +43,10 @@ export async function runDirector(input: DirectorInput): Promise<DirectorResult>
     ? '\n注意：角色的原计划被突发事件打断，需要表现出被中断的反应。'
     : '';
 
+  const playerContext = input.playerMessage
+    ? `\n\n⚡ 玩家介入："${input.playerMessage}"\n请在叙事中体现对玩家指令/对话的回应，角色的行动和对话应该反映出受到了这个输入的影响。`
+    : '';
+
   const system = `你是一位互动小说的叙事导演。你需要将角色的机械动作翻译为富有文学性的对话和环境描写。
 
 角色信息：
@@ -50,7 +55,7 @@ export async function runDirector(input: DirectorInput): Promise<DirectorResult>
 - 背景：${input.characterPersona.background}
 
 当前目标：${input.currentGoal.what}
-原因：${input.currentGoal.why}${eventContext}${interruptContext}`;
+原因：${input.currentGoal.why}${eventContext}${interruptContext}${playerContext}`;
 
   const { text, usage } = await generateText({
     model: getChatModel(),

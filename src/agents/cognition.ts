@@ -33,9 +33,18 @@ export async function runCognition(
   );
   const contextContent = systemMessage?.content ?? '';
 
+  // Extract player messages to include in reasoning
+  const playerMessages = assembledContext.messages
+    .filter((m) => m.role === 'user')
+    .map((m) => m.content);
+
+  const playerContext = playerMessages.length > 0
+    ? `\n\n## 玩家介入\n玩家刚刚发出了以下指令/对话，你必须优先考虑并回应：\n${playerMessages.map((m) => `> ${m}`).join('\n')}\n\n注意：玩家的输入应该直接影响你的下一个行动决策。`
+    : '';
+
   const { text, usage } = await generateText({
     model: getChatModel(),
-    system: contextContent,
+    system: contextContent + playerContext,
     prompt: `基于你当前的记忆、人格、目标和世界状态，运用5W1H分析法决定你的下一个短期行动目标。
 
 你必须严格输出以下JSON格式（不要添加任何其他内容）：

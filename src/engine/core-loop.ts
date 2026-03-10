@@ -218,7 +218,7 @@ export class CoreLoop {
         description: goal.how[0] ?? goal.what,
       };
       debug.setGoapQueue([fallbackAction], 30);
-      await this.executeAction(fallbackAction, goal, persona, undefined, false);
+      await this.executeAction(fallbackAction, goal, persona, undefined, false, playerMessage);
 
       // ⑨ Auto-pause after task
       this.checkAutoPause();
@@ -243,12 +243,12 @@ export class CoreLoop {
 
       if (conflict) {
         // Interrupted! Advance to event, then handle
-        await this.handleInterrupt(plan.actions, goal, persona, conflict);
+        await this.handleInterrupt(plan.actions, goal, persona, conflict, playerMessage);
       } else {
         // Execute all actions sequentially
         for (let i = 0; i < plan.actions.length; i++) {
           debug.updateGoapStatus(i, 'running');
-          await this.executeAction(plan.actions[i], goal, persona, undefined, false);
+          await this.executeAction(plan.actions[i], goal, persona, undefined, false, i === 0 ? playerMessage : undefined);
           debug.updateGoapStatus(i, 'done');
 
           // ⑨ Auto-pause after each GOAP task
@@ -305,6 +305,7 @@ export class CoreLoop {
     goal: Goal5W1H,
     persona: NonNullable<ReturnType<typeof useCharacterStore.getState.prototype.getPersona>>,
     event: WorldEvent,
+    playerMessage?: string | null,
   ) {
     const debug = useDebugStore.getState();
     const { contextEngine, timeline, characterId } = this.config;
@@ -350,6 +351,7 @@ export class CoreLoop {
       },
       worldEvent: event,
       interrupted: true,
+      playerMessage: playerMessage ?? undefined,
     });
 
     debug.pushTrace({
@@ -385,6 +387,7 @@ export class CoreLoop {
     persona: NonNullable<ReturnType<typeof useCharacterStore.getState.prototype.getPersona>>,
     worldEvent: WorldEvent | undefined,
     interrupted: boolean,
+    playerMessage?: string | null,
   ) {
     const debug = useDebugStore.getState();
     const { contextEngine } = this.config;
@@ -397,6 +400,7 @@ export class CoreLoop {
       action,
       worldEvent,
       interrupted,
+      playerMessage: playerMessage ?? undefined,
     });
 
     debug.pushTrace({
