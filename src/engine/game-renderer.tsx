@@ -1,10 +1,10 @@
 /**
  * Game Renderer - React-based visual novel UI.
- * MVP: Pure React rendering instead of full Pixi'VN canvas.
- * Implements typewriter text effect, character display, and dialogue box.
+ * Scene queue: each scene is shown one-at-a-time with typewriter effect,
+ * then auto-advances to the next after a brief pause.
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { SceneOutput } from '../memory/schemas';
 
 interface GameRendererProps {
@@ -46,38 +46,43 @@ export function GameRenderer({
   currentLocation,
 }: GameRendererProps) {
   const [history, setHistory] = useState<SceneOutput[]>([]);
+  const [queue, setQueue] = useState<SceneOutput[]>([]);
+  const [currentScene, setCurrentScene] = useState<SceneOutput | null>(null);
   const historyRef = useRef<HTMLDivElement>(null);
-  const prevScenesRef = useRef<SceneOutput[]>([]);
+  const lastScenesRef = useRef<SceneOutput[]>([]);
 
-  // The latest scene is always the last one in the current batch
-  const currentScene = scenes.length > 0 ? scenes[scenes.length - 1] : null;
-  // Fallback: if dialogue is empty, use narration as display text
+  // When new scenes arrive from core-loop, enqueue them
+  useEffect(() => {
+    if (scenes.length === 0 || scenes === lastScenesRef.current) return;
+    lastScenesRef.current = scenes;
+    setQueue((q) => [...q, ...scenes]);
+  }, [scenes]);
+
+  // Dequeue: when no scene is currently displayed, take the next from queue
+  useEffect(() => {
+    if (currentScene || queue.length === 0) return;
+    const [next, ...rest] = queue;
+    setCurrentScene(next);
+    setQueue(rest);
+  }, [currentScene, queue]);
+
+  // Get display text for typewriter
   const displayText = currentScene
     ? (currentScene.dialogue || currentScene.narration || '')
     : '';
   const { displayed, isComplete } = useTypewriter(displayText, 40);
 
-  // When new scenes arrive, flush previous batch + all-but-last of new batch into history
+  // When typewriter completes, wait briefly then move scene to history
   useEffect(() => {
-    if (scenes.length === 0) return;
+    if (!isComplete || !currentScene) return;
+    const timer = setTimeout(() => {
+      setHistory((h) => [...h, currentScene]);
+      setCurrentScene(null);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [isComplete, currentScene]);
 
-    setHistory((h) => {
-      const additions: SceneOutput[] = [];
-      // Flush all previous scenes into history
-      if (prevScenesRef.current.length > 0) {
-        additions.push(...prevScenesRef.current);
-      }
-      // Add all but the last scene of the new batch (last one gets typewriter)
-      if (scenes.length > 1) {
-        additions.push(...scenes.slice(0, -1));
-      }
-      return additions.length > 0 ? [...h, ...additions] : h;
-    });
-
-    prevScenesRef.current = scenes.length > 0 ? [scenes[scenes.length - 1]] : [];
-  }, [scenes]);
-
-  // Auto-scroll history when it changes or typewriter progresses
+  // Auto-scroll history
   useEffect(() => {
     if (historyRef.current) {
       historyRef.current.scrollTop = historyRef.current.scrollHeight;
@@ -151,6 +156,19 @@ export function GameRenderer({
               {!isComplete && <span style={styles.cursor}>▊</span>}
             </p>
           </div>
+          {/* Queue indicator */}
+          {queue.length > 0 && (
+            <div style={styles.queueHint}>
+              还有 {queue.length} 段...
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty state when no scene and no queue */}
+      {!currentScene && queue.length === 0 && history.length === 0 && (
+        <div style={styles.dialogueBox}>
+          <p style={styles.emptyHint}>等待叙事生成...</p>
         </div>
       )}
     </div>
@@ -254,5 +272,17 @@ const styles: Record<string, React.CSSProperties> = {
   cursor: {
     animation: 'blink 1s infinite',
     color: '#7ec8e3',
+  },
+  queueHint: {
+    textAlign: 'right',
+    color: '#555',
+    fontSize: '11px',
+    marginTop: '8px',
+  },
+  emptyHint: {
+    color: '#555',
+    fontStyle: 'italic',
+    fontSize: '14px',
+    margin: 0,
   },
 };
