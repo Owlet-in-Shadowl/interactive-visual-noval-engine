@@ -8,6 +8,7 @@ import { useSettingsStore } from './settings-store';
 import { BUILTIN_SCRIPT_ID } from '../storage/seed';
 import type { ScriptMetadata } from '../storage/storage-interface';
 import { T } from '../theme';
+import { Play, Trash2, Download } from 'lucide-react';
 
 interface ScriptListProps {
   onStartGame: () => void;
@@ -25,6 +26,7 @@ export function ScriptList({ onStartGame }: ScriptListProps) {
   const activeScript = useSettingsStore((s) => s.activeScript);
   const selectScript = useSettingsStore((s) => s.selectScript);
   const deleteScript = useSettingsStore((s) => s.deleteScript);
+  const storage = useSettingsStore((s) => s.storage);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
@@ -34,6 +36,19 @@ export function ScriptList({ onStartGame }: ScriptListProps) {
     } else {
       setConfirmDeleteId(id);
     }
+  };
+
+  const handleDownload = async (id: string, name: string) => {
+    const bundle = await storage.getScript(id);
+    if (!bundle) return;
+    const json = JSON.stringify(bundle, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name.replace(/[/\\?%*:|"<>]/g, '-')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -48,6 +63,7 @@ export function ScriptList({ onStartGame }: ScriptListProps) {
               script={script}
               isSelected={script.id === activeScriptId}
               onSelect={() => selectScript(script.id)}
+              onDownload={() => handleDownload(script.id, script.name)}
               onDelete={
                 script.id !== BUILTIN_SCRIPT_ID
                   ? () => handleDelete(script.id)
@@ -68,7 +84,7 @@ export function ScriptList({ onStartGame }: ScriptListProps) {
         onClick={onStartGame}
         disabled={!activeScript}
       >
-        ▶ 开始游戏
+        <Play size={14} /> 开始游戏
         {activeScript && (
           <span style={styles.startBtnSub}>
             {' '}— {activeScript.metadata.name}
@@ -85,12 +101,14 @@ function ScriptCard({
   script,
   isSelected,
   onSelect,
+  onDownload,
   onDelete,
   isConfirmingDelete,
 }: {
   script: ScriptMetadata;
   isSelected: boolean;
   onSelect: () => void;
+  onDownload: () => void;
   onDelete?: () => void;
   isConfirmingDelete: boolean;
 }) {
@@ -126,20 +144,32 @@ function ScriptCard({
             ? new Date(script.updatedAt).toLocaleDateString('zh-CN')
             : '默认'}
         </span>
-        {onDelete && (
+        <div style={styles.cardActions}>
           <button
-            style={{
-              ...styles.deleteBtn,
-              ...(isConfirmingDelete ? styles.deleteBtnConfirm : {}),
-            }}
+            style={styles.actionBtn}
             onClick={(e) => {
               e.stopPropagation();
-              onDelete();
+              onDownload();
             }}
+            title="下载 JSON"
           >
-            {isConfirmingDelete ? '确认删除' : '🗑️'}
+            <Download size={12} />
           </button>
-        )}
+          {onDelete && (
+            <button
+              style={{
+                ...styles.actionBtn,
+                ...(isConfirmingDelete ? styles.deleteBtnConfirm : {}),
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              {isConfirmingDelete ? '确认删除' : <Trash2 size={12} />}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -213,7 +243,11 @@ const styles: Record<string, React.CSSProperties> = {
     color: T.textMuted,
     fontSize: '11px',
   },
-  deleteBtn: {
+  cardActions: {
+    display: 'flex',
+    gap: '4px',
+  },
+  actionBtn: {
     padding: '2px 8px',
     background: 'transparent',
     border: 'none',
@@ -221,6 +255,8 @@ const styles: Record<string, React.CSSProperties> = {
     color: T.textTertiary,
     fontSize: '11px',
     cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
   },
   deleteBtnConfirm: {
     color: T.error,
@@ -236,8 +272,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '16px',
     cursor: 'pointer',
     fontFamily: T.fontSerif,
-    textAlign: 'center' as const,
     marginTop: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
   },
   startBtnSub: {
     fontSize: '12px',

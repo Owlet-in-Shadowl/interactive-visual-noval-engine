@@ -8,6 +8,10 @@ import { useSettingsStore } from './settings-store';
 import { generateScript } from '../agents/script-generator';
 import type { ScriptBundle } from '../storage/storage-interface';
 import { T } from '../theme';
+import {
+  Loader, Sparkles, RefreshCw, CheckCircle2,
+  BookOpen, User, Globe, Settings, Save,
+} from 'lucide-react';
 
 export function ScriptGenerator() {
   const [description, setDescription] = useState('');
@@ -71,7 +75,7 @@ export function ScriptGenerator() {
         onClick={handleGenerate}
         disabled={!description.trim() || isGenerating}
       >
-        {isGenerating ? '⏳ 正在生成（约 10-30 秒）...' : '✨ 生成剧本'}
+        {isGenerating ? <><Loader size={14} /> 正在生成（约 10-30 秒）...</> : <><Sparkles size={14} /> 生成剧本</>}
       </button>
 
       {/* Error */}
@@ -80,7 +84,7 @@ export function ScriptGenerator() {
           <strong>生成失败：</strong>
           <p style={{ margin: '6px 0 0', fontSize: '11px' }}>{error}</p>
           <button style={styles.retryBtn} onClick={handleGenerate}>
-            🔄 重试
+            <RefreshCw size={11} /> 重试
           </button>
         </div>
       )}
@@ -89,16 +93,16 @@ export function ScriptGenerator() {
       {preview && (
         <div style={styles.previewBox}>
           <h4 style={styles.previewTitle}>
-            ✅ 生成成功
+            <CheckCircle2 size={14} /> 生成成功
             <span style={styles.durationTag}>
               {(duration / 1000).toFixed(1)}s
             </span>
           </h4>
           <p style={styles.previewLine}>
-            📖 <strong>{preview.metadata.name}</strong>
+            <BookOpen size={13} /> <strong>{preview.metadata.name}</strong>
           </p>
           <div style={styles.previewSection}>
-            <strong style={styles.sectionTitle}>👤 角色</strong>
+            <strong style={styles.sectionTitle}><User size={12} /> 角色</strong>
             {preview.characters.map((c) => (
               <p key={c.core.id} style={styles.previewDetail}>
                 {c.core.name} — {c.core.background.slice(0, 60)}...
@@ -106,7 +110,7 @@ export function ScriptGenerator() {
             ))}
           </div>
           <div style={styles.previewSection}>
-            <strong style={styles.sectionTitle}>🌍 事件</strong>
+            <strong style={styles.sectionTitle}><Globe size={12} /> 事件</strong>
             {preview.chapters[0]?.events.map((e) => (
               <p key={e.id} style={styles.previewDetail}>
                 {Math.floor(e.time / 60)
@@ -119,7 +123,7 @@ export function ScriptGenerator() {
             ))}
           </div>
           <div style={styles.previewSection}>
-            <strong style={styles.sectionTitle}>⚙️ GOAP 动作</strong>
+            <strong style={styles.sectionTitle}><Settings size={12} /> GOAP 动作</strong>
             <p style={styles.previewDetail}>
               {preview.goapActions.map((a) => a.name).join('、')}
             </p>
@@ -132,7 +136,7 @@ export function ScriptGenerator() {
             onClick={handleSave}
             disabled={saved}
           >
-            {saved ? '✅ 已保存' : '💾 保存剧本'}
+            {saved ? <><CheckCircle2 size={13} /> 已保存</> : <><Save size={13} /> 保存剧本</>}
           </button>
         </div>
       )}
@@ -180,6 +184,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     cursor: 'pointer',
     alignSelf: 'flex-start',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
   },
   errorBox: {
     padding: '10px 14px',
@@ -200,6 +207,9 @@ const styles: Record<string, React.CSSProperties> = {
     color: T.textSecondary,
     fontSize: '11px',
     cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
   },
   previewBox: {
     padding: '14px 16px',
@@ -224,6 +234,9 @@ const styles: Record<string, React.CSSProperties> = {
     color: T.textSecondary,
     fontSize: '13px',
     margin: '4px 0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
   },
   previewSection: {
     margin: '10px 0',
@@ -231,7 +244,9 @@ const styles: Record<string, React.CSSProperties> = {
   sectionTitle: {
     color: T.textSecondary,
     fontSize: '12px',
-    display: 'block',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
     marginBottom: '4px',
   },
   previewDetail: {
@@ -250,6 +265,9 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'white',
     fontSize: '13px',
     cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
   },
   saveBtnDone: {
     background: T.success,

@@ -6,6 +6,10 @@ import { useState, useCallback } from 'react';
 import { useSettingsStore } from './settings-store';
 import { ScriptBundleSchema, type ScriptBundle } from '../storage/storage-interface';
 import { T } from '../theme';
+import {
+  FolderOpen, CheckCircle2, BookOpen,
+  User, Calendar, Settings, Save,
+} from 'lucide-react';
 
 const TEMPLATE: object = {
   metadata: {
@@ -177,7 +181,7 @@ export function ScriptUpload() {
           onChange={handleFileUpload}
           style={{ display: 'none' }}
         />
-        <span style={styles.dropText}>📁 点击选择 .json 文件</span>
+        <span style={styles.dropText}><FolderOpen size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />点击选择 .json 文件</span>
         <span style={styles.dropHint}>或在下方粘贴 JSON 内容</span>
       </label>
 
@@ -209,18 +213,18 @@ export function ScriptUpload() {
       {/* Preview */}
       {preview && (
         <div style={styles.previewBox}>
-          <h4 style={styles.previewTitle}>✅ 校验通过</h4>
+          <h4 style={styles.previewTitle}><CheckCircle2 size={14} /> 校验通过</h4>
           <p style={styles.previewLine}>
-            📖 <strong>{preview.metadata.name}</strong>
+            <BookOpen size={13} /> <strong>{preview.metadata.name}</strong>
           </p>
           <p style={styles.previewLine}>
-            👤 角色：{preview.characters.map((c) => c.core.name).join('、')}
+            <User size={13} /> 角色：{preview.characters.map((c) => c.core.name).join('、')}
           </p>
           <p style={styles.previewLine}>
-            📅 章节：{preview.chapters.length} 章 · {preview.chapters.reduce((n, ch) => n + ch.events.length, 0)} 事件
+            <Calendar size={13} /> 章节：{preview.chapters.length} 章 · {preview.chapters.reduce((n, ch) => n + ch.events.length, 0)} 事件
           </p>
           <p style={styles.previewLine}>
-            ⚙️ GOAP 动作：{preview.goapActions.length} 个
+            <Settings size={13} /> GOAP 动作：{preview.goapActions.length} 个
           </p>
           <button
             style={{
@@ -230,7 +234,7 @@ export function ScriptUpload() {
             onClick={handleSave}
             disabled={saved}
           >
-            {saved ? '✅ 已保存' : '💾 保存剧本'}
+            {saved ? <><CheckCircle2 size={13} /> 已保存</> : <><Save size={13} /> 保存剧本</>}
           </button>
         </div>
       )}
@@ -344,11 +348,17 @@ const styles: Record<string, React.CSSProperties> = {
     color: T.success,
     fontSize: '14px',
     margin: '0 0 8px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
   },
   previewLine: {
     color: T.textSecondary,
     fontSize: '12px',
     margin: '4px 0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
   },
   saveBtn: {
     marginTop: '10px',
@@ -360,6 +370,9 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'white',
     fontSize: '13px',
     cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
   },
   saveBtnDone: {
     background: T.success,

@@ -9,17 +9,25 @@ import { ScriptUpload } from './ScriptUpload';
 import { ScriptGenerator } from './ScriptGenerator';
 import { ModelConfigPanel } from './ModelConfig';
 import { T } from '../theme';
+import { BookOpen, Upload, Sparkles, Wrench, ArrowLeft } from 'lucide-react';
 
 interface SettingsScreenProps {
   onBack: () => void;
   onStartGame: () => void;
 }
 
+const tabIcons: Record<SettingsTab, React.ReactNode> = {
+  select: <BookOpen size={13} strokeWidth={1.5} />,
+  upload: <Upload size={13} strokeWidth={1.5} />,
+  generate: <Sparkles size={13} strokeWidth={1.5} />,
+  model: <Wrench size={13} strokeWidth={1.5} />,
+};
+
 const tabs: { key: SettingsTab; label: string }[] = [
-  { key: 'select', label: '📚 选择剧本' },
-  { key: 'upload', label: '📤 上传剧本' },
-  { key: 'generate', label: '✨ 生成剧本' },
-  { key: 'model', label: '🔧 模型配置' },
+  { key: 'select', label: '选择剧本' },
+  { key: 'upload', label: '上传剧本' },
+  { key: 'generate', label: '生成剧本' },
+  { key: 'model', label: '模型配置' },
 ];
 
 export function SettingsScreen({ onBack, onStartGame }: SettingsScreenProps) {
@@ -32,7 +40,7 @@ export function SettingsScreen({ onBack, onStartGame }: SettingsScreenProps) {
       {/* Header */}
       <div style={styles.header}>
         <button style={styles.backBtn} onClick={onBack}>
-          ← 返回
+          <ArrowLeft size={14} strokeWidth={1.5} /> 返回
         </button>
         <h2 style={styles.title}>设置</h2>
         <div style={{ width: 60 }} /> {/* spacer for centering */}
@@ -49,7 +57,7 @@ export function SettingsScreen({ onBack, onStartGame }: SettingsScreenProps) {
             }}
             onClick={() => setTab(tab.key)}
           >
-            {tab.label}
+            {tabIcons[tab.key]} {tab.label}
           </button>
         ))}
       </div>
@@ -99,6 +107,9 @@ const styles: Record<string, React.CSSProperties> = {
     color: T.textSecondary,
     fontSize: '13px',
     cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
   },
   title: {
     color: T.textPrimary,
@@ -122,7 +133,10 @@ const styles: Record<string, React.CSSProperties> = {
     color: T.textPrimary,
     fontSize: '12px',
     cursor: 'pointer',
-    textAlign: 'center' as const,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
   },
   tabBtnActive: {
     background: T.bgActive,
