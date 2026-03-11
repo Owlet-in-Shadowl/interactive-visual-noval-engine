@@ -4,36 +4,13 @@
 
 import { useState, useEffect } from 'react';
 import { useDebugStore } from './debug-store';
-import type { GamePhase } from './debug-store';
 import { T } from '../theme';
-
-const phaseLabels: Record<GamePhase, string> = {
-  idle: '⏸ 空闲',
-  assemble: '① 上下文组装',
-  cognition: '② 5W1H推理',
-  goap: '③ GOAP规划',
-  goap_gen: '②½ 动态动作生成',
-  timeline: '④ 时间线检测',
-  director: '⑤ 叙事生成',
-  render: '⑥ 渲染中',
-  reflection: '⑩ 记忆反思',
-  waiting_input: '⑦ 等待输入',
-  error: '❌ 错误',
-};
-
-const phaseColors: Record<GamePhase, string> = {
-  idle: '#666',
-  assemble: '#7ec8e3',
-  cognition: '#e6c3a1',
-  goap: '#a1e6c3',
-  goap_gen: '#b8e6a1',
-  timeline: '#e6a1c3',
-  director: '#c3a1e6',
-  render: '#a1c3e6',
-  reflection: '#e6e6a1',
-  waiting_input: '#c3e6a1',
-  error: '#e64545',
-};
+import { phaseLabels, phaseColors } from './core-loop-graph';
+import { StateMachineDiagram } from './StateMachineDiagram';
+import {
+  ChevronRight, ChevronLeft, ChevronDown,
+  CheckCircle2, Loader, AlertTriangle, Circle,
+} from 'lucide-react';
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(() => window.innerWidth < 768);
@@ -66,14 +43,10 @@ export function DebugDrawer() {
     return (
       <div style={styles.collapsedBar} onClick={() => setCollapsed(false)}>
         <span style={{ ...styles.phaseDot, background: phaseColors[state.phase] }} />
-        <span style={styles.collapsedLabel}>Debug ▸</span>
+        <span style={styles.collapsedLabel}>Debug</span>
       </div>
     );
   }
-
-  const elapsed = state.phaseStartedAt > 0
-    ? ((Date.now() - state.phaseStartedAt) / 1000).toFixed(1)
-    : '0.0';
 
   return (
     <aside style={{
@@ -84,17 +57,18 @@ export function DebugDrawer() {
       <div style={styles.drawerHeader}>
         <span style={styles.drawerTitle}>Debug Panel</span>
         <span style={styles.loopCount}>Loop #{state.loopCount}</span>
-        <button style={styles.collapseBtn} onClick={() => setCollapsed(true)}>◂</button>
+        <button style={styles.collapseBtn} onClick={() => setCollapsed(true)}><ChevronRight size={14} /></button>
       </div>
 
       <div style={styles.scrollArea}>
         {/* Phase */}
         <Section title="核心循环状态" section="phase" expanded={expandedSections.phase} toggle={toggle}>
-          <div style={styles.phaseBox}>
-            <span style={{ ...styles.phaseDot, background: phaseColors[state.phase] }} />
-            <span style={styles.phaseLabel}>{phaseLabels[state.phase]}</span>
-            <span style={styles.elapsed}>{elapsed}s</span>
-          </div>
+          <StateMachineDiagram
+            phase={state.phase}
+            prevPhase={state.prevPhase}
+            phaseStartedAt={state.phaseStartedAt}
+            phaseDurations={state.phaseDurations}
+          />
         </Section>
 
         {/* 5W1H Goal */}
@@ -120,7 +94,13 @@ export function DebugDrawer() {
               {state.goapQueue.map((item, i) => (
                 <div key={i} style={styles.goapItem}>
                   <span style={styles.goapIcon}>
-                    {item.status === 'done' ? '✅' : item.status === 'running' ? '⏳' : item.status === 'interrupted' ? '⚠️' : '○'}
+                    {item.status === 'done'
+                      ? <CheckCircle2 size={12} color={T.success} />
+                      : item.status === 'running'
+                        ? <Loader size={12} color={T.accent} />
+                        : item.status === 'interrupted'
+                          ? <AlertTriangle size={12} color={T.error} />
+                          : <Circle size={12} color={T.textMuted} />}
                   </span>
                   <span style={styles.goapName}>{item.action.name}</span>
                   <span style={styles.goapTime}>{item.action.timeCost}m</span>
@@ -170,7 +150,10 @@ export function DebugDrawer() {
                     color: e.conflict ? T.error : T.textSecondary,
                   }}
                 >
-                  {e.conflict ? '⚠' : '•'} {e.time} {e.event}
+                  <span style={{ display: 'inline-flex', verticalAlign: 'middle', marginRight: 4 }}>
+                    {e.conflict ? <AlertTriangle size={10} /> : <Circle size={6} fill="currentColor" />}
+                  </span>
+                  {e.time} {e.event}
                 </div>
               ))}
             </div>
@@ -232,7 +215,9 @@ function Section({
   return (
     <div style={styles.section}>
       <div style={styles.sectionHeader} onClick={() => toggle(section)}>
-        <span>{expanded ? '▾' : '▸'} {title}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />} {title}
+        </span>
       </div>
       {expanded && <div style={styles.sectionBody}>{children}</div>}
     </div>
@@ -326,11 +311,6 @@ const styles: Record<string, React.CSSProperties> = {
   sectionBody: {
     padding: '6px 12px 10px',
   },
-  phaseBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
   phaseDot: {
     width: '8px',
     height: '8px',
@@ -338,8 +318,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'inline-block',
     flexShrink: 0,
   },
-  phaseLabel: { flex: 1 },
-  elapsed: { color: T.accent },
   goalBox: {},
   row: {
     display: 'flex',
@@ -356,7 +334,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '6px',
     padding: '2px 0',
   },
-  goapIcon: { fontSize: '12px', width: '18px', textAlign: 'center' },
+  goapIcon: { width: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   goapName: { flex: 1 },
   goapTime: { color: T.textTertiary },
   goapTotal: { color: T.accent, marginTop: '4px', fontSize: '11px' },

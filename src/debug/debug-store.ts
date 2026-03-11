@@ -30,7 +30,9 @@ export interface AgentTrace {
 export interface DebugState {
   // Core loop phase
   phase: GamePhase;
+  prevPhase: GamePhase;
   phaseStartedAt: number;
+  phaseDurations: Partial<Record<GamePhase, number>>; // ms elapsed per phase in current cycle
   loopCount: number;
 
   // 5W1H result
@@ -84,7 +86,9 @@ export interface DebugState {
 
 export const useDebugStore = create<DebugState>()((set) => ({
   phase: 'idle',
+  prevPhase: 'idle',
   phaseStartedAt: 0,
+  phaseDurations: {},
   loopCount: 0,
   currentGoal: null,
   goalRawJson: '',
@@ -97,7 +101,14 @@ export const useDebugStore = create<DebugState>()((set) => ({
   errors: [],
 
   setPhase: (phase) =>
-    set({ phase, phaseStartedAt: Date.now() }),
+    set((s) => {
+      const now = Date.now();
+      const durations = { ...s.phaseDurations };
+      if (s.phase !== phase && s.phaseStartedAt > 0) {
+        durations[s.phase] = now - s.phaseStartedAt;
+      }
+      return { prevPhase: s.phase, phase, phaseStartedAt: now, phaseDurations: durations };
+    }),
 
   setCurrentGoal: (goal, rawJson) =>
     set({ currentGoal: goal, goalRawJson: rawJson }),
@@ -131,12 +142,14 @@ export const useDebugStore = create<DebugState>()((set) => ({
     })),
 
   incrementLoop: () =>
-    set((s) => ({ loopCount: s.loopCount + 1 })),
+    set((s) => ({ loopCount: s.loopCount + 1, phaseDurations: {} })),
 
   reset: () =>
     set({
       phase: 'idle',
+      prevPhase: 'idle',
       phaseStartedAt: 0,
+      phaseDurations: {},
       loopCount: 0,
       currentGoal: null,
       goalRawJson: '',

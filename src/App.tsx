@@ -20,6 +20,7 @@ import { useModelConfigStore } from './settings/model-config-store';
 import { Timeline } from './timeline/timeline';
 import type { SceneOutput, WorldEvent, GOAPAction } from './memory/schemas';
 import { T } from './theme';
+import { Settings, Play, Pause, Square, RefreshCw, Hand } from 'lucide-react';
 
 type AppView = 'start' | 'settings' | 'game';
 
@@ -175,7 +176,7 @@ export function App() {
                 style={styles.settingsBtn}
                 onClick={() => setView('settings')}
               >
-                ⚙ 设置
+                <Settings size={14} strokeWidth={1.5} /> 设置
               </button>
             </div>
 
@@ -197,13 +198,17 @@ export function App() {
             {/* Control bar */}
             <div style={styles.controlBar}>
               <button style={styles.controlBtn} onClick={handlePauseResume}>
-                {coreLoopRef.current?.isPaused() ? '▶ 继续' : '⏸ 暂停'}
+                {coreLoopRef.current?.isPaused()
+                  ? <><Play size={12} strokeWidth={1.5} /> 继续</>
+                  : <><Pause size={12} strokeWidth={1.5} /> 暂停</>}
               </button>
               <button style={styles.controlBtn} onClick={handleStop}>
-                ⏹ 停止
+                <Square size={12} strokeWidth={1.5} /> 停止
               </button>
               <span style={styles.modeIndicator}>
-                {playerMode === 'autonomous' ? '🔄 自主' : '✋ 介入'}
+                {playerMode === 'autonomous'
+                  ? <><RefreshCw size={12} strokeWidth={1.5} /> 自主</>
+                  : <><Hand size={12} strokeWidth={1.5} /> 介入</>}
               </span>
             </div>
 
@@ -348,6 +353,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
     cursor: 'pointer',
     fontFamily: T.fontSans,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
   },
   hint: {
     color: T.textMuted,
@@ -378,12 +386,18 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     fontSize: '12px',
     fontFamily: T.fontSans,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
   },
   modeIndicator: {
     marginLeft: 'auto',
     color: T.textTertiary,
     fontSize: '12px',
     fontFamily: T.fontSans,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
   },
   mainArea: {
     flex: 1,

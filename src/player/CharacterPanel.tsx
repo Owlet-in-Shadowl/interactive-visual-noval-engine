@@ -8,6 +8,10 @@ import { useCharacterStore } from '../memory/character-store';
 import { useDebugStore } from '../debug/debug-store';
 import type { GOAPAction } from '../memory/schemas';
 import { T } from '../theme';
+import {
+  ChevronRight, ChevronLeft, ChevronDown,
+  MapPin, Clock, Users, Timer, Coins,
+} from 'lucide-react';
 
 interface CharacterPanelProps {
   characterId: string;
@@ -41,7 +45,7 @@ export function CharacterPanel({ characterId, goapActions }: CharacterPanelProps
     return (
       <div style={styles.collapsed} onClick={() => setExpanded(true)}>
         <span style={styles.collapsedInitial}>{persona.name.charAt(0)}</span>
-        <span style={styles.collapsedLabel}>角色 ▸</span>
+        <span style={styles.collapsedLabel}>角色</span>
       </div>
     );
   }
@@ -55,7 +59,7 @@ export function CharacterPanel({ characterId, goapActions }: CharacterPanelProps
       {/* Header */}
       <div style={styles.header}>
         <span style={styles.headerTitle}>{persona.name}</span>
-        <button style={styles.collapseBtn} onClick={() => setExpanded(false)}>◂</button>
+        <button style={styles.collapseBtn} onClick={() => setExpanded(false)}><ChevronLeft size={14} /></button>
       </div>
 
       <div style={styles.scrollArea}>
@@ -114,12 +118,12 @@ export function CharacterPanel({ characterId, goapActions }: CharacterPanelProps
               <p style={styles.goalWhat}>{currentGoal.what}</p>
               <p style={styles.goalWhy}>{currentGoal.why}</p>
               <div style={styles.goalMeta}>
-                <span>📍 {currentGoal.where}</span>
-                {currentGoal.when && <span>⏰ {currentGoal.when}</span>}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><MapPin size={10} /> {currentGoal.where}</span>
+                {currentGoal.when && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Clock size={10} /> {currentGoal.when}</span>}
               </div>
               {currentGoal.who.length > 0 && (
                 <div style={styles.goalMeta}>
-                  <span>👥 {currentGoal.who.join(', ')}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Users size={10} /> {currentGoal.who.join(', ')}</span>
                 </div>
               )}
             </div>
@@ -156,8 +160,8 @@ export function CharacterPanel({ characterId, goapActions }: CharacterPanelProps
               </div>
               <p style={styles.actionDesc}>{action.description}</p>
               <div style={styles.actionMeta}>
-                <span>⏱ {action.timeCost}m</span>
-                <span>💰 {action.cost}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Timer size={10} /> {action.timeCost}m</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Coins size={10} /> {action.cost}</span>
               </div>
             </div>
           ))}
@@ -190,7 +194,9 @@ function Section({
   return (
     <div style={styles.section}>
       <div style={styles.sectionHeader} onClick={() => toggle(sectionKey)}>
-        <span>{expanded ? '▾' : '▸'} {title}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />} {title}
+        </span>
       </div>
       {expanded && <div style={styles.sectionBody}>{children}</div>}
     </div>

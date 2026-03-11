@@ -12,6 +12,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { usePlayerStore } from './player-store';
 import type { ChatMessage } from './player-store';
 import { T } from '../theme';
+import { RefreshCw, Hand } from 'lucide-react';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -107,7 +108,7 @@ export function ChatInput({ onSendMessage, isRunning }: ChatInputProps) {
               }}
               onClick={() => setMode('autonomous')}
             >
-              自主运行
+              <RefreshCw size={11} strokeWidth={1.5} /> 自主运行
             </button>
             <button
               style={{
@@ -116,33 +117,85 @@ export function ChatInput({ onSendMessage, isRunning }: ChatInputProps) {
               }}
               onClick={() => setMode('intervention')}
             >
-              介入模式
+              <Hand size={11} strokeWidth={1.5} /> 介入模式
             </button>
           </div>
 
-          <label style={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              checked={autoPause}
-              onChange={toggleAutoPause}
-              style={styles.checkbox}
-            />
-            <span style={styles.checkboxText}>世界事件结束后等待介入</span>
-          </label>
-          <label style={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              checked={dynamicGoap}
-              onChange={toggleDynamicGoap}
-              style={styles.checkbox}
-            />
-            <span style={styles.checkboxText}>允许根据角色行动习得新动作</span>
-          </label>
+          <ToggleSwitch
+            checked={autoPause}
+            onChange={toggleAutoPause}
+            label="世界事件结束后等待介入"
+          />
+          <ToggleSwitch
+            checked={dynamicGoap}
+            onChange={toggleDynamicGoap}
+            label="允许根据角色行动习得新动作"
+          />
         </div>
       )}
     </div>
   );
 }
+
+// ─── ToggleSwitch sub-component ─────────────────────────
+
+function ToggleSwitch({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+}) {
+  return (
+    <div style={toggleStyles.container} onClick={onChange}>
+      <span style={toggleStyles.label}>{label}</span>
+      <div
+        style={{
+          ...toggleStyles.track,
+          background: checked ? T.accent : T.bgElevated,
+        }}
+      >
+        <div
+          style={{
+            ...toggleStyles.thumb,
+            transform: checked ? 'translateX(14px)' : 'translateX(0)',
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+const toggleStyles: Record<string, React.CSSProperties> = {
+  container: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    cursor: 'pointer',
+  },
+  label: {
+    color: T.textTertiary,
+    fontSize: '11px',
+    fontFamily: T.fontSans,
+  },
+  track: {
+    width: '30px',
+    height: '16px',
+    borderRadius: '8px',
+    padding: '2px',
+    transition: 'background 0.2s',
+    flexShrink: 0,
+  },
+  thumb: {
+    width: '12px',
+    height: '12px',
+    borderRadius: '50%',
+    background: 'white',
+    transition: 'transform 0.2s',
+  },
+};
 
 // ─── ChatBubble sub-component ──────────────────────────
 
@@ -246,25 +299,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '11px',
     cursor: 'pointer',
     fontFamily: T.fontSans,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
   },
   modeBtnActive: {
     background: T.bgActive,
   },
   modeBtnIntervention: {
     background: T.bgActive,
-  },
-  checkboxLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    cursor: 'pointer',
-  },
-  checkbox: {
-    accentColor: T.accent,
-  },
-  checkboxText: {
-    color: T.textTertiary,
-    fontSize: '11px',
-    fontFamily: T.fontSans,
   },
 };

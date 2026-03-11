@@ -7,6 +7,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { SceneOutput } from '../memory/schemas';
 import { T } from '../theme';
+import {
+  Smile, Frown, Angry, Zap,
+  AlertCircle, Eye, Flame,
+} from 'lucide-react';
+import type { ComponentType } from 'react';
+import type { LucideProps } from 'lucide-react';
 
 interface GameRendererProps {
   scenes: SceneOutput[];
@@ -90,15 +96,15 @@ export function GameRenderer({
     }
   }, [history, displayed]);
 
-  const emotionToEmoji: Record<string, string> = {
-    neutral: '',
-    happy: '😊',
-    sad: '😢',
-    angry: '😠',
-    surprised: '😲',
-    fearful: '😨',
-    determined: '💪',
-    suspicious: '🤨',
+  const emotionIcons: Record<string, ComponentType<LucideProps> | null> = {
+    neutral: null,
+    happy: Smile,
+    sad: Frown,
+    angry: Angry,
+    surprised: AlertCircle,
+    fearful: Eye,
+    determined: Flame,
+    suspicious: Eye,
   };
 
   return (
@@ -147,7 +153,11 @@ export function GameRenderer({
                 {currentScene.speaker}
                 {currentScene.emotion && (
                   <span style={styles.emotionBadge}>
-                    {emotionToEmoji[currentScene.emotion] ?? ''} {currentScene.emotion}
+                    {(() => {
+                      const Icon = emotionIcons[currentScene.emotion!];
+                      return Icon ? <Icon size={12} style={{ verticalAlign: 'middle', marginRight: 3 }} /> : null;
+                    })()}
+                    {currentScene.emotion}
                   </span>
                 )}
               </div>
