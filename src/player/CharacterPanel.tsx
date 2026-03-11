@@ -220,7 +220,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: T.accent,
     color: 'white',
     fontSize: '12px',
-    fontWeight: 'bold',
+    fontWeight: 500,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -251,7 +251,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: `1px solid ${T.border}`,
   },
   headerTitle: {
-    fontWeight: 'bold',
+    fontWeight: 500,
     color: T.accent,
     fontSize: '13px',
   },
@@ -277,7 +277,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     color: T.textSecondary,
     fontSize: '11px',
-    fontWeight: 'bold',
+    fontWeight: 500,
   },
   sectionBody: {
     padding: '6px 12px 10px',
@@ -325,7 +325,7 @@ const styles: Record<string, React.CSSProperties> = {
   traitBar: {
     flex: 1,
     height: '4px',
-    background: 'rgba(255,255,255,0.08)',
+    background: T.borderSubtle,
     borderRadius: T.radius,
     overflow: 'hidden',
   },
@@ -351,7 +351,7 @@ const styles: Record<string, React.CSSProperties> = {
   goalWhat: {
     margin: '0 0 4px',
     color: T.accent,
-    fontWeight: 'bold',
+    fontWeight: 500,
     fontSize: '11px',
     lineHeight: '1.4',
   },
@@ -385,7 +385,7 @@ const styles: Record<string, React.CSSProperties> = {
   longTermPriority: {
     color: T.accent,
     fontSize: '10px',
-    fontWeight: 'bold',
+    fontWeight: 500,
     flexShrink: 0,
   },
   longTermDesc: {
@@ -394,7 +394,7 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: '1.4',
   },
   actionCard: {
-    background: 'rgba(255,255,255,0.03)',
+    background: T.borderSubtle,
     borderRadius: T.radius,
     padding: '6px 8px',
     marginBottom: '4px',
@@ -407,7 +407,7 @@ const styles: Record<string, React.CSSProperties> = {
   actionName: {
     color: T.success,
     fontSize: '11px',
-    fontWeight: 'bold',
+    fontWeight: 500,
   },
   dynamicBadge: {
     padding: '1px 5px',

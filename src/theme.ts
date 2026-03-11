@@ -1,25 +1,26 @@
 /**
- * Anthropic-inspired design tokens for the visual novel engine.
- * Warm dark palette with terracotta accent, adapted from anthropic.com.
+ * Claude.ai-inspired design tokens for the visual novel engine.
+ * Extracted from claude.ai dark mode: warm neutral dark palette with terracotta accent.
  */
 
 export const T = {
-  // Backgrounds
-  bg: '#1a1816',
-  bgSurface: '#242220',
-  bgElevated: '#2e2b28',
-  bgOverlay: 'rgba(0, 0, 0, 0.7)',
+  // Backgrounds — from claude.ai body rgb(38,38,36), surface rgb(48,48,46)
+  bg: '#262624',
+  bgSurface: '#30302e',
+  bgElevated: '#3a3836',
+  bgActive: '#141413',   // claude.ai active/selected state — near-black
+  bgOverlay: 'rgba(0, 0, 0, 0.6)',
 
-  // Borders
-  border: 'rgba(255,255,255,0.06)',
-  borderSubtle: 'rgba(255,255,255,0.03)',
-  borderStrong: 'rgba(255,255,255,0.12)',
+  // Borders — claude.ai uses rgba(222,220,209, 0.15) warm-tinted
+  border: 'rgba(222,220,209,0.15)',
+  borderSubtle: 'rgba(222,220,209,0.08)',
+  borderStrong: 'rgba(222,220,209,0.25)',
 
-  // Text
-  textPrimary: '#f5f0e8',
-  textSecondary: '#a89f94',
-  textTertiary: '#6b6560',
-  textMuted: '#4a4542',
+  // Text — claude.ai primary rgb(250,249,245), secondary rgb(194,192,182), tertiary rgb(156,154,146)
+  textPrimary: '#faf9f5',
+  textSecondary: '#c2c0b6',
+  textTertiary: '#9c9a92',
+  textMuted: '#6b6965',
 
   // Accent (Anthropic terracotta)
   accent: '#d97757',
@@ -37,16 +38,20 @@ export const T = {
 
   // Special
   gold: '#c4956a',
-  narration: '#8a8078',
+  narration: '#9c9a92',
   speaker: '#d97757',
 
-  // Typography
+  // Typography — claude.ai uses system sans-serif
   fontSerif: '"Noto Serif SC", "Source Han Serif CN", Georgia, serif',
   fontSans: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   fontMono: '"JetBrains Mono", "Fira Code", "SF Mono", Menlo, monospace',
 
-  // Radii
+  // Radii — claude.ai: button 6px, input 10px, card 20px
   radius: '6px',
   radiusLg: '10px',
+  radiusXl: '20px',
   radiusPill: '100px',
+
+  // Shadows — claude.ai input card shadow
+  shadowCard: 'rgba(0,0,0,0.035) 0px 4px 20px 0px, rgba(222,220,209,0.15) 0px 0px 0px 0.5px',
 } as const;

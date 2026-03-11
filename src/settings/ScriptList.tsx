@@ -170,16 +170,13 @@ const styles: Record<string, React.CSSProperties> = {
   card: {
     padding: '12px 16px',
     background: T.bgSurface,
-    borderWidth: '1px',
-    borderStyle: 'solid',
-    borderColor: T.border,
+    border: 'none',
     borderRadius: T.radiusLg,
     cursor: 'pointer',
-    transition: 'border-color 0.2s',
+    transition: 'background 0.2s',
   },
   cardSelected: {
-    borderColor: T.accent,
-    background: T.accentMuted,
+    background: T.bgActive,
   },
   cardHeader: {
     display: 'flex',
@@ -190,7 +187,7 @@ const styles: Record<string, React.CSSProperties> = {
   cardName: {
     color: T.textPrimary,
     fontSize: '14px',
-    fontWeight: 'bold',
+    fontWeight: 500,
   },
   badge: {
     padding: '2px 8px',
@@ -219,16 +216,13 @@ const styles: Record<string, React.CSSProperties> = {
   deleteBtn: {
     padding: '2px 8px',
     background: 'transparent',
-    borderWidth: '1px',
-    borderStyle: 'solid',
-    borderColor: T.border,
+    border: 'none',
     borderRadius: '4px',
     color: T.textTertiary,
     fontSize: '11px',
     cursor: 'pointer',
   },
   deleteBtnConfirm: {
-    borderColor: T.error,
     color: T.error,
     background: T.errorMuted,
   },

@@ -148,7 +148,7 @@ export function ChatInput({ onSendMessage, isRunning }: ChatInputProps) {
 
 function ChatBubble({ message }: { message: ChatMessage }) {
   const roleStyles: Record<string, React.CSSProperties> = {
-    player: { color: T.accent, fontWeight: 'bold' },
+    player: { color: T.accent, fontWeight: 500 },
     narrator: { color: T.narration, fontStyle: 'italic' },
     character: { color: T.gold },
     system: { color: T.textMuted, fontSize: '11px' },
@@ -203,12 +203,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   input: {
     flex: 1,
-    padding: '8px 12px',
+    padding: '8px 14px',
     background: T.bgSurface,
     borderWidth: '1px',
     borderStyle: 'solid',
-    borderColor: T.borderStrong,
-    borderRadius: T.radius,
+    borderColor: T.border,
+    borderRadius: T.radiusLg,
     color: T.textPrimary,
     fontSize: '13px',
     outline: 'none',
@@ -240,24 +240,18 @@ const styles: Record<string, React.CSSProperties> = {
   modeBtn: {
     padding: '3px 10px',
     background: T.bgSurface,
-    borderWidth: '1px',
-    borderStyle: 'solid',
-    borderColor: T.border,
+    border: 'none',
     borderRadius: T.radius,
-    color: T.textTertiary,
+    color: T.textPrimary,
     fontSize: '11px',
     cursor: 'pointer',
     fontFamily: T.fontSans,
   },
   modeBtnActive: {
-    background: T.accentMuted,
-    borderColor: T.accent,
-    color: T.accent,
+    background: T.bgActive,
   },
   modeBtnIntervention: {
-    background: T.accentMuted,
-    borderColor: T.accent,
-    color: T.accent,
+    background: T.bgActive,
   },
   checkboxLabel: {
     display: 'flex',

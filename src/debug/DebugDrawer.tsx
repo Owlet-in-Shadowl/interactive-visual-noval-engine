@@ -280,7 +280,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: T.bg,
     borderBottom: `1px solid ${T.border}`,
   },
-  drawerTitle: { fontWeight: 'bold', color: T.textPrimary },
+  drawerTitle: { fontWeight: 500, color: T.textPrimary },
   loopCount: { color: T.accent, fontSize: '11px' },
   collapseBtn: {
     background: 'none',
@@ -321,7 +321,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     color: T.textSecondary,
     fontSize: '11px',
-    fontWeight: 'bold',
+    fontWeight: 500,
   },
   sectionBody: {
     padding: '6px 12px 10px',

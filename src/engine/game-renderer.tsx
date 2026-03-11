@@ -233,10 +233,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   dialogueBox: {
     background: T.bgSurface,
-    borderTop: `1px solid ${T.border}`,
-    padding: '16px 24px',
+    borderRadius: `${T.radiusXl} ${T.radiusXl} 0 0`,
+    padding: '20px 24px',
     minHeight: '140px',
     flexShrink: 0,
+    boxShadow: T.shadowCard,
   },
   narration: {
     fontStyle: 'italic',
@@ -254,7 +255,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   speakerName: {
     color: T.speaker,
-    fontWeight: 'bold',
+    fontWeight: 500,
     fontSize: '15px',
   },
   emotionBadge: {
