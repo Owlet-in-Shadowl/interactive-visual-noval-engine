@@ -8736,7 +8736,9 @@
                 "salome"
               ]
             }
-          ]
+          ],
+          "name": "第五圆舞曲·终幕",
+          "severity": "critical"
         }
       ],
       "locations": [
@@ -8944,8 +8946,9 @@
               "eventId": "midnight-bells",
               "speaker": null,
               "content": {
-                "dialogue": "钟楼的钟声从城市中心出发，沉重而均匀地向四周扩散。第一声如同巨锤落在时间的铁砧上。",
-                "narration": "1923年12月31日·子夜"
+                "text": "钟楼的钟声从城市中心出发，沉重而均匀地向四周扩散。第一声如同巨锤落在时间的铁砧上。",
+                "type": "prose",
+                "stage": "1923年12月31日·子夜"
               },
               "ratified": [
                 "salome",
@@ -8958,8 +8961,8 @@
               "eventId": "midnight-bells",
               "speaker": null,
               "content": {
-                "dialogue": "多瑙河的水面在夜风中颤动，将散碎的月光推来推去。远处金色大厅传来《蓝色多瑙河》的旋律——这是全维也纳最后一个和平的瞬间。",
-                "style": "italic"
+                "text": "多瑙河的水面在夜风中颤动，将散碎的月光推来推去。远处金色大厅传来《蓝色多瑙河》的旋律——这是全维也纳最后一个和平的瞬间。",
+                "type": "prose"
               },
               "ratified": [
                 "salome",
@@ -8972,8 +8975,9 @@
               "eventId": "midnight-bells",
               "speaker": null,
               "content": {
-                "dialogue": "莎乐美的身影在第十二声钟响中融入夜色。暗红色长发是最后消失的部分，像一缕被风吹散的火焰。",
-                "narration": "1924年开始了。关于她的故事，才刚刚开始。"
+                "text": "莎乐美的身影在第十二声钟响中融入夜色。暗红色长发是最后消失的部分，像一缕被风吹散的火焰。",
+                "type": "prose",
+                "stage": "1924年开始了。关于她的故事，才刚刚开始。"
               },
               "ratified": [
                 "salome",
