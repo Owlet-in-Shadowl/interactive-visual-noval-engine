@@ -25,6 +25,7 @@ import { Timeline } from '../timeline/timeline';
 import { useDebugStore } from '../debug/debug-store';
 import { usePlayerStore } from '../player/player-store';
 import type { GOAPAction, SceneOutput, WorldEvent, Goal5W1H, EpisodicMemory } from '../memory/schemas';
+import { framesToScenes, projectAllMemories } from '../pf';
 
 export interface CoreLoopConfig {
   characterId: string;
@@ -88,6 +89,8 @@ export class CoreLoop {
 
   stop() {
     this.running = false;
+    // 防止 beginPresetSequence 的 Promise 永远挂起
+    usePlayerStore.getState().endPresetSequence();
   }
 
   pause() {
@@ -106,6 +109,15 @@ export class CoreLoop {
   private async runOneCycle(): Promise<void> {
     const { contextEngine, timeline, goapActions, characterId } = this.config;
     const debug = useDebugStore.getState();
+
+    // ─── 快速路径：预置场景（PF 信源） ───
+    const nextEvent = timeline.peekNextEvent();
+    if (nextEvent && timeline.hasFrames(nextEvent)) {
+      await this.playPresetEvent(nextEvent);
+      return;
+    }
+
+    // ─── 现有 AI 管线 ───
     const charStore = useCharacterStore.getState();
     const persona = charStore.getPersona(characterId);
     if (!persona) throw new Error(`Character ${characterId} not found`);
@@ -289,6 +301,68 @@ export class CoreLoop {
 
     // Small delay between cycles for readability
     await this.sleep(2000);
+  }
+
+  /**
+   * 预置场景播放：PF frames → 渲染投影 + 记忆投影
+   * 跳过整个 AI 管线（cognition/GOAP/director），直接从编剧数据渲染。
+   */
+  private async playPresetEvent(event: WorldEvent): Promise<void> {
+    const { contextEngine, timeline, characterId } = this.config;
+    const debug = useDebugStore.getState();
+
+    // 1. 时间推进到事件
+    timeline.advanceToEvent(event.id);
+
+    // 2. Debug phase
+    debug.setPhase('preset');
+
+    // 3. 渲染投影：frames → SceneOutput[]（只包含 POV 角色能看到的）
+    const scenes = framesToScenes(event.frames!, characterId);
+
+    // 4. 发送到渲染器 + 记录到 debug
+    debug.setScenes(scenes);
+    this.config.onScenesReady(scenes);
+
+    // 5. 等待玩家点击完所有场景
+    await usePlayerStore.getState().beginPresetSequence();
+
+    // 6. 记忆投影入库（带 PF 元数据）
+    const projections = projectAllMemories(event.frames!, characterId);
+    for (const proj of projections) {
+      await contextEngine.ingest({
+        sessionId: this.sessionId,
+        message: {
+          role: proj.participationRole === 'speaker' ? 'assistant' : 'user',
+          content: proj.filteredContent,
+        },
+        pfMetadata: {
+          pfId: proj.pfId,
+          participationRole: proj.participationRole,
+          knownPeers: proj.knownPeers,
+          involvedCharacters: proj.involvedCharacters,
+        },
+      });
+    }
+
+    // 7. 事件本身作为世界事件入库
+    await contextEngine.ingest({
+      sessionId: this.sessionId,
+      message: {
+        role: 'system',
+        content: `[世界事件] ${event.name}：${event.description}`,
+      },
+    });
+
+    // 8. 后处理
+    await contextEngine.afterTurn({
+      sessionId: this.sessionId,
+      sessionFile: `memory/${characterId}.session.json`,
+      messages: [],
+      prePromptMessageCount: 0,
+    });
+
+    debug.setPhase('idle');
   }
 
   /**

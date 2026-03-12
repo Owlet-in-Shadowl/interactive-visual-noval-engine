@@ -20,6 +20,7 @@ export const phaseLabels: Record<GamePhase, string> = {
   timeline: '时间线',
   director: '叙事',
   render: '渲染',
+  preset: '预置',
   reflection: '反思',
   waiting_input: '等待',
   error: '错误',
@@ -34,6 +35,7 @@ export const phaseColors: Record<GamePhase, string> = {
   timeline: '#e6a1c3',
   director: '#c3a1e6',
   render: '#a1c3e6',
+  preset: '#e6d4a1',
   reflection: '#e6e6a1',
   waiting_input: '#c3e6a1',
   error: '#e64545',
@@ -91,6 +93,7 @@ export const NODES: GraphNode[] = [
   // ── Side branches ──
   { id: 'waiting_input', label: '等待', icon: 'MessageCircle', x: SX, y: 22,  kind: 'phase', phase: 'waiting_input' },
   { id: 'goap_gen',      label: '介入', icon: 'Wand2',         x: SX, y: 176, kind: 'phase', phase: 'goap_gen' },
+  { id: 'preset',        label: '预置', icon: 'BookOpen',      x: SX, y: 76,  kind: 'phase', phase: 'preset' },
   { id: 'error',         label: '错误', icon: 'AlertTriangle', x: SX, y: 234, kind: 'phase', phase: 'error' },
   { id: 'reflection',    label: '反思', icon: 'RefreshCw',     x: SX, y: 322, kind: 'phase', phase: 'reflection' },
 ];
@@ -120,4 +123,7 @@ export const EDGES: GraphEdge[] = [
   // Waiting input
   { from: 'idle',          to: 'waiting_input', dashed: true },
   { from: 'waiting_input', to: 'assemble' },
+  // Preset fast-path (PF frames → render → memory → idle)
+  { from: 'idle',   to: 'preset', dashed: true },
+  { from: 'preset', to: 'idle' },
 ];
