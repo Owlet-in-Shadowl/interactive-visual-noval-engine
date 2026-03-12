@@ -23,18 +23,23 @@
 | 15 | ChatInput toggle switch（替换 checkbox） | done | commit b3f63b0, CSS-only 实现 |
 | 16 | 剧本 JSON 下载功能 | done | commit b3f63b0 |
 | 17 | 血色多瑙河剧本转换 | done | 6 角色 / 3 章 / 15 事件 / 12 GOAP |
-| 18 | CLAUDE.md + 进度追踪体系 | in-progress | 当前 session |
+| 18 | CLAUDE.md + 进度追踪体系 | done | commit 0a30f17 |
+| 19 | Reflection Agent（核心循环步骤⑩） | done | commit 22733e4 |
+| 20 | ContextEngine 接口解耦 | done | commit b86d469 |
+| 21 | 代码质量审计（dialog.md 框架） | done | code-quality-audit.md |
 | — | **以下为待做功能** | — | — |
-| 19 | 剧本导入验证（上传时 schema 校验 + 错误提示） | pending | |
-| 20 | 多章节切换（chapter selector UI） | pending | |
-| 21 | 存档/读档功能 | pending | |
-| 22 | 角色立绘/头像系统 | pending | |
-| 23 | 背景图/场景图系统 | pending | |
-| 24 | 音效/BGM 系统 | pending | |
-| 25 | 剧本编辑器（在线编辑角色/事件） | pending | |
-| 26 | 移动端全面优化 | pending | |
-| 27 | PWA 离线支持 | pending | |
-| 28 | 多语言支持 | pending | |
+| 22 | P0 修复：EDR 全局 Store 解耦 | pending | code-quality-audit.md |
+| 23 | P1 修复：runOneCycle 拆分 + ESE + OA | pending | code-quality-audit.md |
+| 24 | 剧本导入验证（上传时 schema 校验 + 错误提示） | pending | |
+| 25 | 多章节切换（chapter selector UI） | pending | |
+| 26 | 存档/读档功能 | pending | |
+| 27 | 角色立绘/头像系统 | pending | |
+| 28 | 背景图/场景图系统 | pending | |
+| 29 | 音效/BGM 系统 | pending | |
+| 30 | 剧本编辑器（在线编辑角色/事件） | pending | |
+| 31 | 移动端全面优化 | pending | |
+| 32 | PWA 离线支持 | pending | |
+| 33 | 多语言支持 | pending | |
 
 ## Architecture Decisions
 
@@ -57,6 +62,16 @@
 - **决定**: agents 层支持 DeepSeek / OpenAI 兼容 API，不绑定特定供应商
 - **原因**: 用户可能使用不同的 API 服务
 - **影响**: model-config-store 管理 API key + endpoint + model name
+
+### AD-5: Reflection 属于编排层，不属于数据层
+- **决定**: Reflection Agent 由 core-loop.ts 的 `maybeReflect()` 调用，不放在 context-engine.ts 的 compact() 内
+- **原因**: context-engine 是数据层（OpenClaw 协议），不应依赖 agents 或 debug store
+- **影响**: context-engine.ts 零 agent 依赖，可独立替换
+
+### AD-6: 暂不切换 Mastra
+- **决定**: 保留当前轻量自定义 agent 实现，不迁移到 Mastra 框架
+- **原因**: 当前 agent 模式统一（generateText + Zod），Mastra 引入额外抽象层但 MVP 阶段收益不明确。接口已预留切换空间
+- **影响**: IFullContextEngine 接口保持 OpenClaw 兼容，未来可切换
 
 ## Known Issues
 
@@ -86,6 +101,18 @@
 - Toggle switch 替换 checkbox
 - 剧本 JSON 下载功能
 
-### Session 8 (当前)
+### Session 8 (commit 0a30f17)
 - 血色多瑙河剧本转换（人物档案 + 小说文本 → ScriptBundle JSON）
 - CLAUDE.md 工作流 + claude-progress.md 进度追踪体系建立
+
+### Session 9 (commits 22733e4 → b86d469)
+- PRD 核心循环差距分析：Reflection Agent 为最大缺口
+- 实现 Reflection Agent（`src/agents/reflection.ts`），闭合核心循环第⑩步
+- 讨论 Mastra 迁移利弊，发现 ContextEngine 接口未完全解耦
+- 解耦 ContextEngine 接口：CoreLoopConfig 改用 IFullContextEngine，Reflection 提为 core-loop 独立步骤
+- 基于 dialog.md 信息论框架完成代码质量审计，输出 code-quality-audit.md
+- 架构决策：AD-5（Reflection 属于编排层非数据层）、AD-6（Mastra 暂不切换）
+
+### Session 10 (当前)
+- 延续 Session 9，将诊断结果写入 code-quality-audit.md
+- 更新 claude-progress.md
