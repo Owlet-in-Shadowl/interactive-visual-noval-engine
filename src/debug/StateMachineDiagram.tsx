@@ -58,49 +58,48 @@ export function StateMachineDiagram({ phase, prevPhase, phaseStartedAt, phaseDur
 
     // ── Special paths ──
 
-    // ce_render → idle: left-side loop back to top
-    if (e.from === 'ce_render' && e.to === 'idle') {
+    // ce_preset_at → idle: left-side loop back to top
+    if (e.from === 'ce_preset_at' && e.to === 'idle') {
       const lx = f.x - fHw - 16;
       return `M${f.x - fHw},${f.y} L${lx},${f.y} L${lx},${t.y} L${t.x - tHw},${t.y}`;
     }
 
-    // ce_preset_at → idle: right-side loop back to top
-    if (e.from === 'ce_preset_at' && e.to === 'idle') {
+    // ce_render → idle: right-side loop back to top
+    if (e.from === 'ce_render' && e.to === 'idle') {
       const rx = f.x + fHw + 16;
       return `M${f.x + fHw},${f.y} L${rx},${f.y} L${rx},${t.y} L${t.x + tHw},${t.y}`;
     }
 
-    // reflection → idle: loop from bottom center back to top
+    // reflection → idle: loop from bottom back up
     if (e.from === 'reflection' && e.to === 'idle') {
       const lx = f.x - fHw - 8;
       return `M${f.x - fHw},${f.y} L${lx},${f.y} L${lx},${t.y + tHh + 2} L${t.x},${t.y + tHh + 2}`;
     }
 
-    // idle → waiting_input: short horizontal (same row roughly)
-    if (e.from === 'idle' && e.to === 'waiting_input') {
+    // idle → ce_idle: straight down (same column)
+    if (e.from === 'idle' && e.to === 'ce_idle') {
       return `M${f.x},${f.y + fHh} L${t.x},${t.y - tHh}`;
     }
 
-    // waiting_input → ce_idle: curve down-left
+    // idle → preset_render: diagonal down-left
+    if (e.from === 'idle' && e.to === 'preset_render') {
+      return `M${f.x - fHw},${f.y + fHh * 0.5} C${t.x + tHw + 15},${f.y + 15}, ${t.x + tHw + 5},${t.y - 8}, ${t.x},${t.y - tHh}`;
+    }
+
+    // idle → waiting_input: diagonal down-right
+    if (e.from === 'idle' && e.to === 'waiting_input') {
+      return `M${f.x + fHw},${f.y + fHh * 0.5} C${t.x - tHw - 15},${f.y + 15}, ${t.x - tHw - 5},${t.y - 8}, ${t.x},${t.y - tHh}`;
+    }
+
+    // waiting_input → ce_idle: curve down-left back to center
     if (e.from === 'waiting_input' && e.to === 'ce_idle') {
       const mx = (f.x + t.x) / 2;
       return `M${f.x},${f.y + fHh} C${mx},${f.y + 30}, ${mx},${t.y}, ${t.x + tHw},${t.y}`;
     }
 
-    // idle → ce_idle: diagonal down-left
-    if (e.from === 'idle' && e.to === 'ce_idle') {
-      return `M${f.x - fHw},${f.y + fHh * 0.5} C${t.x + tHw + 15},${f.y + 15}, ${t.x + tHw + 5},${t.y - 8}, ${t.x},${t.y - tHh}`;
-    }
-
-    // idle → preset_render: diagonal down-right
-    if (e.from === 'idle' && e.to === 'preset_render') {
-      return `M${f.x + fHw},${f.y + fHh * 0.5} C${t.x - tHw - 15},${f.y + 15}, ${t.x - tHw - 5},${t.y - 8}, ${t.x},${t.y - tHh}`;
-    }
-
-    // ce_render → reflection: down from left to center
+    // ce_render → reflection: straight down (same column)
     if (e.from === 'ce_render' && e.to === 'reflection') {
-      const mx = (f.x + t.x) / 2;
-      return `M${f.x},${f.y + fHh} C${mx},${f.y + 15}, ${mx},${t.y - 15}, ${t.x},${t.y - tHh}`;
+      return `M${f.x},${f.y + fHh} L${t.x},${t.y - tHh}`;
     }
 
     // ── Generic paths ──

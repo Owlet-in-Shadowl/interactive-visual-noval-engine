@@ -1,10 +1,10 @@
 /**
  * Core Loop Graph — node/edge data for the state machine visualization.
  *
- * Two-column layout showing both pipelines:
- *   Left column  (x=75):  AI pipeline (cognition→GOAP→director→render)
- *   Right column (x=265): Preset pipeline (PF frames→render→memory)
- *   Center (x=170):        Shared idle + side branches
+ * Three-column layout:
+ *   Left column  (x=75):  Preset pipeline (PF frames→render→memory)
+ *   Center column (x=190): AI pipeline (cognition→GOAP→director→render)
+ *   Right side   (x=290):  Side branches (waiting_input, goap_gen, error)
  */
 
 import type { GamePhase } from './debug-store';
@@ -68,19 +68,27 @@ export const NODE_W = 76;
 export const NODE_H = 24;
 export const CE_W = 62;
 export const CE_H = 18;
-export const SVG_W = 340;
+export const SVG_W = 370;
 export const SVG_H = 420;
 
-const MX = 75;   // AI pipeline center
-const PX = 265;  // Preset pipeline center
+const PX = 75;   // Preset pipeline center (left)
+const MX = 190;  // AI pipeline center (center)
+const SX = 300;  // Side branches (right)
 
 /* ── Nodes ── */
 
 export const NODES: GraphNode[] = [
-  // ── Shared: idle at top center ──
-  { id: 'idle', label: '空闲', icon: 'Pause', x: 170, y: 22, kind: 'phase', phase: 'idle' },
+  // ── Shared: idle at center top ──
+  { id: 'idle', label: '空闲', icon: 'Pause', x: MX, y: 22, kind: 'phase', phase: 'idle' },
 
-  // ── Left column: AI pipeline ──
+  // ── Left column: Preset pipeline ──
+  { id: 'preset_render', label: '渲染投影', icon: 'BookOpen', x: PX, y: 75,  kind: 'phase', phase: 'preset' },
+  { id: 'preset_wait',   label: '等待点击', icon: 'Hand',     x: PX, y: 125, kind: 'phase', phase: 'preset' },
+  { id: 'preset_mem',    label: '记忆投影', icon: 'Layers',   x: PX, y: 175, kind: 'phase', phase: 'preset' },
+  { id: 'ce_preset',     label: 'ingest',   icon: 'Database', x: PX, y: 210, kind: 'ce',    parentPhase: 'preset' },
+  { id: 'ce_preset_at',  label: 'afterTurn', icon: 'Zap',     x: PX, y: 240, kind: 'ce',    parentPhase: 'preset' },
+
+  // ── Center column: AI pipeline ──
   { id: 'ce_idle',       label: 'boot·turn',  icon: 'Zap',       x: MX, y: 55,  kind: 'ce',    parentPhase: 'idle' },
   { id: 'assemble',      label: '上下文',     icon: 'Package',   x: MX, y: 85,  kind: 'phase', phase: 'assemble' },
   { id: 'ce_assemble',   label: 'ingest·asm', icon: 'Database',  x: MX, y: 112, kind: 'ce',    parentPhase: 'assemble' },
@@ -93,24 +101,25 @@ export const NODES: GraphNode[] = [
   { id: 'render',        label: '渲染',       icon: 'Play',      x: MX, y: 327, kind: 'phase', phase: 'render' },
   { id: 'ce_render',     label: 'ingest',     icon: 'Database',  x: MX, y: 354, kind: 'ce',    parentPhase: 'render' },
 
-  // ── Right column: Preset pipeline ──
-  { id: 'preset_render', label: '渲染投影', icon: 'BookOpen', x: PX, y: 75,  kind: 'phase', phase: 'preset' },
-  { id: 'preset_wait',   label: '等待点击', icon: 'Hand',     x: PX, y: 125, kind: 'phase', phase: 'preset' },
-  { id: 'preset_mem',    label: '记忆投影', icon: 'Layers',   x: PX, y: 175, kind: 'phase', phase: 'preset' },
-  { id: 'ce_preset',     label: 'ingest',   icon: 'Database', x: PX, y: 210, kind: 'ce',    parentPhase: 'preset' },
-  { id: 'ce_preset_at',  label: 'afterTurn', icon: 'Zap',     x: PX, y: 240, kind: 'ce',    parentPhase: 'preset' },
-
-  // ── Side branches ──
-  { id: 'waiting_input', label: '等待输入', icon: 'MessageCircle', x: 170, y: 55,  kind: 'phase', phase: 'waiting_input' },
-  { id: 'goap_gen',      label: '动态动作', icon: 'Wand2',         x: 170, y: 175, kind: 'phase', phase: 'goap_gen' },
-  { id: 'error',         label: '错误',     icon: 'AlertTriangle', x: 170, y: 236, kind: 'phase', phase: 'error' },
-  { id: 'reflection',    label: '反思',     icon: 'RefreshCw',     x: 170, y: 385, kind: 'phase', phase: 'reflection' },
+  // ── Right side: Side branches ──
+  { id: 'waiting_input', label: '等待输入', icon: 'MessageCircle', x: SX, y: 55,  kind: 'phase', phase: 'waiting_input' },
+  { id: 'goap_gen',      label: '动态动作', icon: 'Wand2',         x: SX, y: 175, kind: 'phase', phase: 'goap_gen' },
+  { id: 'error',         label: '错误',     icon: 'AlertTriangle', x: SX, y: 236, kind: 'phase', phase: 'error' },
+  { id: 'reflection',    label: '反思',     icon: 'RefreshCw',     x: MX, y: 385, kind: 'phase', phase: 'reflection' },
 ];
 
 /* ── Edges ── */
 
 export const EDGES: GraphEdge[] = [
-  // ── AI Pipeline (left column) ──
+  // ── Preset Pipeline (left column) ──
+  { from: 'idle',          to: 'preset_render', dashed: true },  // conditional fork
+  { from: 'preset_render', to: 'preset_wait' },
+  { from: 'preset_wait',   to: 'preset_mem' },
+  { from: 'preset_mem',    to: 'ce_preset' },
+  { from: 'ce_preset',     to: 'ce_preset_at' },
+  { from: 'ce_preset_at',  to: 'idle' },          // loop back (left side)
+
+  // ── AI Pipeline (center column) ──
   { from: 'idle',         to: 'ce_idle' },
   { from: 'ce_idle',      to: 'assemble' },
   { from: 'assemble',     to: 'ce_assemble' },
@@ -122,23 +131,13 @@ export const EDGES: GraphEdge[] = [
   { from: 'director',     to: 'ce_director' },
   { from: 'ce_director',  to: 'render' },
   { from: 'render',       to: 'ce_render' },
-  { from: 'ce_render',    to: 'idle' },           // loop back (left side)
+  { from: 'ce_render',    to: 'idle' },           // loop back (right side of center)
 
-  // ── Preset Pipeline (right column) ──
-  { from: 'idle',          to: 'preset_render', dashed: true },  // conditional fork
-  { from: 'preset_render', to: 'preset_wait' },
-  { from: 'preset_wait',   to: 'preset_mem' },
-  { from: 'preset_mem',    to: 'ce_preset' },
-  { from: 'ce_preset',     to: 'ce_preset_at' },
-  { from: 'ce_preset_at',  to: 'idle' },          // loop back (right side)
-
-  // ── AI pipeline side branches ──
+  // ── Side branches (right) ──
+  { from: 'idle',          to: 'waiting_input', dashed: true },
+  { from: 'waiting_input', to: 'ce_idle' },
   { from: 'cognition',  to: 'goap_gen',   dashed: true },
   { from: 'goap_gen',   to: 'goap',       dashed: true },
   { from: 'ce_render',  to: 'reflection', dashed: true },
   { from: 'reflection', to: 'idle' },
-
-  // ── Waiting input (intervention mode) ──
-  { from: 'idle',          to: 'waiting_input', dashed: true },
-  { from: 'waiting_input', to: 'ce_idle' },
 ];
