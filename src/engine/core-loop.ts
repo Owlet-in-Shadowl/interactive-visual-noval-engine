@@ -11,23 +11,24 @@
  * ⑦ Player input injection (if intervention mode)
  * ⑧ Post-processing (ContextEngine.afterTurn)
  * ⑨ Auto-pause check (if autoPauseOnTaskDone)
+ * ⑩ Reflection (conditional: significant event or memory threshold)
  */
 
-import { NovelContextEngine } from '../memory/context-engine';
-import type { AssembleResult, AgentMessage } from '../memory/context-engine';
+import type { IFullContextEngine, AssembleResult, AgentMessage } from '../memory/context-engine';
 import { useCharacterStore } from '../memory/character-store';
 import { runCognition } from '../agents/cognition';
 import { runDirector } from '../agents/director';
+import { runReflection } from '../agents/reflection';
 import { generateGoapAction } from '../agents/goap-generator';
 import { planActions, mapGoalToGOAPState } from '../goap/planner';
 import { Timeline } from '../timeline/timeline';
 import { useDebugStore } from '../debug/debug-store';
 import { usePlayerStore } from '../player/player-store';
-import type { GOAPAction, SceneOutput, WorldEvent, Goal5W1H } from '../memory/schemas';
+import type { GOAPAction, SceneOutput, WorldEvent, Goal5W1H, EpisodicMemory } from '../memory/schemas';
 
 export interface CoreLoopConfig {
   characterId: string;
-  contextEngine: NovelContextEngine;
+  contextEngine: IFullContextEngine;
   timeline: Timeline;
   goapActions: GOAPAction[];
   onScenesReady: (scenes: SceneOutput[]) => void;
@@ -264,22 +265,16 @@ export class CoreLoop {
       }
     }
 
-    // ⑧ Post-processing (may trigger ⑩ Reflection internally)
+    // ⑧ Post-processing (memory compaction)
     await contextEngine.afterTurn({
       sessionId: this.sessionId,
       sessionFile: `memory/${characterId}.session.json`,
       messages: [],
       prePromptMessageCount: 0,
-      runtimeContext: {
-        characterId,
-        worldState,
-        currentGoals: charStore.getGoals(characterId).shortTerm
-          .filter((g) => g.status === 'active')
-          .map((g) => g.goal),
-        personaShifts: charStore.getPersonaShifts(characterId),
-      },
     });
-    debug.setPhase('idle');
+
+    // ⑩ Reflection (conditional: significant event or memory threshold)
+    await this.maybeReflect(characterId, persona, debug);
 
     // Update timeline display
     debug.setTimeline({
@@ -439,6 +434,67 @@ export class CoreLoop {
 
     // Pause to let player read
     await this.sleep(2000);
+  }
+
+  /**
+   * ⑩ Conditionally run Reflection Agent.
+   * Triggered when recent memories contain significant events (importance > 0.7).
+   * Produces PersonaShift that evolves character personality over time.
+   */
+  private async maybeReflect(
+    characterId: string,
+    persona: NonNullable<ReturnType<typeof useCharacterStore.getState.prototype.getPersona>>,
+    debug: ReturnType<typeof useDebugStore.getState>,
+  ): Promise<void> {
+    const { contextEngine } = this.config;
+
+    // Check trigger: any recent memory with high importance
+    const recentMemories = contextEngine.getRecentMemories(this.sessionId, 20);
+    const hasSignificant = recentMemories.slice(-5).some((m) => m.importance > 0.7);
+    if (!hasSignificant) return;
+
+    debug.setPhase('reflection');
+
+    try {
+      const charStore = useCharacterStore.getState();
+      const existingShifts = charStore.getPersonaShifts(characterId);
+      const activeGoals = charStore.getGoals(characterId).shortTerm
+        .filter((g) => g.status === 'active')
+        .map((g) => g.goal);
+
+      const result = await runReflection({
+        persona,
+        recentMemories,
+        existingShifts,
+        currentGoals: activeGoals,
+      });
+
+      debug.pushTrace({
+        agent: 'reflection',
+        duration: result.durationMs,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+        timestamp: Date.now(),
+      });
+
+      if (result.shift) {
+        charStore.applyPersonaShift(characterId, result.shift);
+
+        // Record the reflection as a memory
+        await contextEngine.ingest({
+          sessionId: this.sessionId,
+          message: {
+            role: 'assistant',
+            content: `[反思] ${result.shift.trigger} → ${result.shift.description}`,
+          },
+        });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      debug.pushError(`Reflection Agent 失败: ${msg}`);
+    }
+
+    debug.setPhase('idle');
   }
 
   private describeSituation(timeline: Timeline): string {
