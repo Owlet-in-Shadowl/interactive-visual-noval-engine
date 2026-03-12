@@ -7,6 +7,8 @@
  */
 
 import { useCharacterStore } from './character-store';
+import { runReflection } from '../agents/reflection';
+import { useDebugStore } from '../debug/debug-store';
 import type {
   CharacterState,
   WorldState,
@@ -288,13 +290,67 @@ export class NovelContextEngine implements IFullContextEngine {
       return { ok: true, compacted: false };
     }
 
-    // MVP: simple compaction by keeping only important memories
+    // Step 1: Compact by keeping only important memories
     const important = memories.filter((m) => m.importance > 0.5);
     this.episodicStore.clear(params.sessionId);
     this.episodicStore.addBatch(params.sessionId, important);
 
     const summary = `Compacted ${memories.length} → ${important.length} memories`;
-    return { ok: true, compacted: true, summary };
+
+    // Step 2: Run Reflection Agent to detect persona evolution
+    let personaShift: PersonaShift | undefined;
+    const characterId = this.parseCharacterId(params.sessionId);
+    const store = useCharacterStore.getState();
+    const persona = store.getPersona(characterId);
+
+    if (persona) {
+      const debug = useDebugStore.getState();
+      debug.setPhase('reflection');
+
+      try {
+        const recentMemories = memories.slice(-20);
+        const existingShifts = store.getPersonaShifts(characterId);
+        const goals = store.getGoals(characterId);
+        const activeGoals = goals.shortTerm
+          .filter((g) => g.status === 'active')
+          .map((g) => g.goal);
+
+        const result = await runReflection({
+          persona,
+          recentMemories,
+          existingShifts,
+          currentGoals: activeGoals,
+        });
+
+        debug.pushTrace({
+          agent: 'reflection',
+          duration: result.durationMs,
+          inputTokens: result.inputTokens,
+          outputTokens: result.outputTokens,
+          timestamp: Date.now(),
+        });
+
+        if (result.shift) {
+          personaShift = result.shift;
+          store.applyPersonaShift(characterId, result.shift);
+
+          // Ingest reflection as a memory
+          this.episodicStore.add(params.sessionId, {
+            id: `mem-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            characterId,
+            content: `[反思] ${result.shift.trigger} → ${result.shift.description}`,
+            timestamp: Date.now(),
+            importance: 0.9,
+            type: 'reflection',
+          });
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        debug.pushError(`Reflection Agent 失败: ${msg}`);
+      }
+    }
+
+    return { ok: true, compacted: true, summary, personaShift };
   }
 
   // ─── afterTurn (核心循环步骤⑨) ─────────────────────────
@@ -311,13 +367,16 @@ export class NovelContextEngine implements IFullContextEngine {
   }): Promise<void> {
     if (params.isHeartbeat) return;
 
-    // Auto-compact if too many memories
     const memories = this.episodicStore.getAll(params.sessionId);
-    if (memories.length > 50) {
+    const shouldReflect = memories.length > 50
+      || this.hasSignificantEvent(params.sessionId);
+
+    if (shouldReflect) {
       await this.compact({
         sessionId: params.sessionId,
         sessionFile: params.sessionFile,
         force: true,
+        runtimeContext: params.runtimeContext,
       });
     }
   }
@@ -370,6 +429,13 @@ export class NovelContextEngine implements IFullContextEngine {
   }
 
   // ─── Private helpers ───────────────────────────────────
+
+  /** Check if recent memories contain significant events worth reflecting on */
+  private hasSignificantEvent(sessionId: string): boolean {
+    const memories = this.episodicStore.getAll(sessionId);
+    const recent = memories.slice(-5);
+    return recent.some((m) => m.importance > 0.7);
+  }
 
   private parseCharacterId(sessionId: string): string {
     return sessionId.replace('novel:', '').split(':')[0];

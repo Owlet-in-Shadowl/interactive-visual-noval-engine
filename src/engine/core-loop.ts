@@ -264,14 +264,22 @@ export class CoreLoop {
       }
     }
 
-    // ⑧ Post-processing
-    debug.setPhase('idle');
+    // ⑧ Post-processing (may trigger ⑩ Reflection internally)
     await contextEngine.afterTurn({
       sessionId: this.sessionId,
       sessionFile: `memory/${characterId}.session.json`,
       messages: [],
       prePromptMessageCount: 0,
+      runtimeContext: {
+        characterId,
+        worldState,
+        currentGoals: charStore.getGoals(characterId).shortTerm
+          .filter((g) => g.status === 'active')
+          .map((g) => g.goal),
+        personaShifts: charStore.getPersonaShifts(characterId),
+      },
     });
+    debug.setPhase('idle');
 
     // Update timeline display
     debug.setTimeline({
