@@ -27,8 +27,15 @@
 | 19 | Reflection Agent（核心循环步骤⑩） | done | commit 22733e4 |
 | 20 | ContextEngine 接口解耦 | done | commit b86d469 |
 | 21 | 代码质量审计（dialog.md 框架） | done | code-quality-audit.md |
+| 22 | 参与框架（PF）模块 — 信源数据模型 | done | src/pf/ (schema+plugins+engine), commit 7d7882a |
+| 23 | Schema 扩展（WorldEvent frames + EpisodicMemory PF 字段） | done | commit 9264bd7 |
+| 24 | Timeline + PlayerStore 预置场景支持 | done | commit 84bebd3 |
+| 25 | Core Loop PF 快速路径 | done | commit e521ed1 |
+| 26 | 渲染器点击推进（替代自动推进） | done | commit 27b618b |
+| 27 | Debug 面板 preset 节点 | done | commit e521ed1 |
+| 28 | scarlet-danube 预置场景数据（3事件 PF frames） | done | commit dc1c5fb |
 | — | **以下为待做功能** | — | — |
-| 22 | P0 修复：EDR 全局 Store 解耦 | pending | code-quality-audit.md |
+| 29 | P0 修复：EDR 全局 Store 解耦 | pending | code-quality-audit.md |
 | 23 | P1 修复：runOneCycle 拆分 + ESE + OA | pending | code-quality-audit.md |
 | 24 | 剧本导入验证（上传时 schema 校验 + 错误提示） | pending | |
 | 25 | 多章节切换（chapter selector UI） | pending | |
@@ -73,6 +80,26 @@
 - **原因**: 当前 agent 模式统一（generateText + Zod），Mastra 引入额外抽象层但 MVP 阶段收益不明确。接口已预留切换空间
 - **影响**: IFullContextEngine 接口保持 OpenClaw 兼容，未来可切换
 
+### AD-7: 有序 SceneOutput[] 格式
+- **决定**: 预置场景使用与 AI 生成相同的 SceneOutput[] 有序列表格式
+- **原因**: 分析传统 VN 引擎（Ren'Py, ink, Monogatari）后发现，有序指令序列是最自然的叙事格式
+- **影响**: 渲染器无需区分预置/AI 场景
+
+### AD-8: PF 是唯一信源
+- **决定**: ParticipationFrame 是叙事内容的唯一信源，SceneOutput（渲染）和 EpisodicMemory（记忆）都是投影计算的派生结果
+- **原因**: 消除数据冗余，确保渲染和记忆从同一信源出发
+- **影响**: WorldEvent 上只有 frames 字段，没有 presetScenes
+
+### AD-9: 插件化投影计算
+- **决定**: perceptionMods: Record<string, unknown> 支持插件扩展，builtin 插件零标注覆盖 90% 场景
+- **原因**: 平衡灵活性与编剧工作负担
+- **影响**: 复杂信息不对称场景可自定义插件
+
+### AD-10: visibleTo 从 PF 派生
+- **决定**: 不设 visibleTo 字段，从 frames 的参与者列表中自动派生
+- **原因**: 避免 visibleTo 与 frames 参与者不一致的数据冗余
+- **影响**: deriveVisibleTo(frames) 函数可随时计算
+
 ## Known Issues
 
 - **AI API 调用偶发失败**: cognition agent 有时返回 `AI_APICallError: Failed to process successful response`，属于上游 API 问题，非本项目 bug
@@ -113,6 +140,18 @@
 - 基于 dialog.md 信息论框架完成代码质量审计，输出 code-quality-audit.md
 - 架构决策：AD-5（Reflection 属于编排层非数据层）、AD-6（Mastra 暂不切换）
 
-### Session 10 (当前)
+### Session 10
 - 延续 Session 9，将诊断结果写入 code-quality-audit.md
 - 更新 claude-progress.md
+
+### Session 11-12 (commits 7d7882a → dc1c5fb)
+- 分析修正方案.md（编剧协作者反馈），研究传统 VN 引擎数据结构
+- 深入讨论 Goffman 参与框架理论，确立 AD-7~AD-10 架构决策
+- 实现 PF 模块（src/pf/）：schema + builtin 插件 + 渲染投影 + 记忆投影
+- Schema 扩展：WorldEvent.frames + EpisodicMemory PF 字段
+- Timeline + PlayerStore 预置场景支持
+- Core Loop 集成：peekNextEvent → hasFrames → playPresetEvent 快速路径
+- 渲染器改造：点击推进替代 1.5s 自动推进
+- Debug 面板：preset phase + 状态图节点
+- scarlet-danube 3个关键事件添加 PF frames 数据
+- 所有步骤 tsc --noEmit 零错误
