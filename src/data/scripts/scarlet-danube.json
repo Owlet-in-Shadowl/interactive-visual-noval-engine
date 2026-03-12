@@ -271,7 +271,42 @@
           "description": "莎乐美公然出席金色大厅的跨年演奏会——这是她整个计划的第一步：主动暴露行踪，将所有势力引入她预先设计好的场域。各方特工确认目标出席。",
           "location": "golden-hall",
           "affectedCharacters": ["salome", "albert", "krosov", "goering"],
-          "severity": "major"
+          "severity": "major",
+          "anchorLevel": "strong",
+          "frames": [
+            {
+              "id": "pf-salome-spotted-001",
+              "eventId": "salome-spotted",
+              "speaker": null,
+              "content": {
+                "dialogue": "金色大厅的穹顶之下，管弦乐团正演奏舒伯特的《未完成交响曲》。水晶吊灯将光线切割成万千碎片，洒在绸缎与勋章之上。",
+                "narration": "金色大厅·中场休息前"
+              },
+              "ratified": ["salome", "albert", "krosov", "goering"]
+            },
+            {
+              "id": "pf-salome-spotted-002",
+              "eventId": "salome-spotted",
+              "speaker": null,
+              "content": {
+                "dialogue": "她出现在二层包厢的入口处。暗红色长发曳地，血色裙裳在灯光下如同流动的宝石。整个大厅的视线像被磁铁吸引般偏转了五度。",
+                "narration": "莎乐美现身"
+              },
+              "ratified": ["salome", "albert", "krosov"],
+              "overhearers": ["goering"]
+            },
+            {
+              "id": "pf-salome-spotted-003",
+              "eventId": "salome-spotted",
+              "speaker": null,
+              "content": {
+                "dialogue": "她微微侧首，幽蓝色瞳孔扫过大厅——那不是搜寻的目光，而是确认。确认每一个她预设的棋子都已各就各位。",
+                "style": "italic"
+              },
+              "ratified": ["salome", "albert", "krosov"],
+              "overhearers": ["goering"]
+            }
+          ]
         },
         {
           "id": "salome-exits",
@@ -289,7 +324,71 @@
           "description": "阿尔伯特在巷道转角处以战壕刀抵住莎乐美的颈间，要求她交出弗洛伊德未公开的研究材料。然而莎乐美以绝对的从容回应威胁，反客为主——她知道自己是唯一的钥匙，任何想开门的人都不能毁掉她。",
           "location": "alley",
           "affectedCharacters": ["salome", "albert"],
-          "severity": "critical"
+          "severity": "critical",
+          "anchorLevel": "fixed",
+          "frames": [
+            {
+              "id": "pf-albert-intercepts-001",
+              "eventId": "albert-intercepts",
+              "speaker": null,
+              "content": {
+                "dialogue": "巷道在这里拐了一个九十度的直角弯。路灯的光被建筑切割成锐利的三角形，铺在湿漉漉的石板路面上。",
+                "narration": "维也纳老城巷道深处"
+              },
+              "ratified": ["albert", "salome"]
+            },
+            {
+              "id": "pf-albert-intercepts-002",
+              "eventId": "albert-intercepts",
+              "speaker": "albert",
+              "addressee": "salome",
+              "content": {
+                "dialogue": "别动。",
+                "narration": "战壕刀的刀背贴上了她的颈侧。阿尔伯特从阴影中现身，宽檐礼帽下的目光沉重而锋利。",
+                "emotion": "determined"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-albert-intercepts-003",
+              "eventId": "albert-intercepts",
+              "speaker": "salome",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "你的刀法很稳。但你不会用它的。",
+                "narration": "莎乐美没有回头，幽蓝色瞳孔在黑暗中微微发光。",
+                "emotion": "neutral"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-albert-intercepts-004",
+              "eventId": "albert-intercepts",
+              "speaker": "albert",
+              "addressee": "salome",
+              "content": {
+                "dialogue": "弗洛伊德的研究。后半部分。你知道我要什么。",
+                "emotion": "determined"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-albert-intercepts-005",
+              "eventId": "albert-intercepts",
+              "speaker": "salome",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "你拿着刀的手很稳，先生。可你的眼睛不是杀手的眼睛。你杀过人，但每一个你都记得。",
+                "narration": "她缓缓转过身来，刀刃随之滑到她的喉前。她看着他，像在看一幅值得细细品味的画。",
+                "emotion": "neutral"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            }
+          ]
         },
         {
           "id": "krosov-arrives",
@@ -416,7 +515,40 @@
           "description": "钟楼的钟声从城市中心出发，沉重而均匀地向四周扩散。1923年结束，1924年开始。多瑙河的水面在夜风中颤动，将散碎的月光推来推去。《蓝色多瑙河》的旋律在空气中飘荡。莎乐美消失在夜色中——关于她的故事，才刚刚开始。",
           "location": "riverbank",
           "affectedCharacters": ["salome", "krosov", "goering"],
-          "severity": "major"
+          "severity": "major",
+          "anchorLevel": "fixed",
+          "frames": [
+            {
+              "id": "pf-midnight-bells-001",
+              "eventId": "midnight-bells",
+              "speaker": null,
+              "content": {
+                "dialogue": "钟楼的钟声从城市中心出发，沉重而均匀地向四周扩散。第一声如同巨锤落在时间的铁砧上。",
+                "narration": "1923年12月31日·子夜"
+              },
+              "ratified": ["salome", "krosov", "goering"]
+            },
+            {
+              "id": "pf-midnight-bells-002",
+              "eventId": "midnight-bells",
+              "speaker": null,
+              "content": {
+                "dialogue": "多瑙河的水面在夜风中颤动，将散碎的月光推来推去。远处金色大厅传来《蓝色多瑙河》的旋律——这是全维也纳最后一个和平的瞬间。",
+                "style": "italic"
+              },
+              "ratified": ["salome", "krosov", "goering"]
+            },
+            {
+              "id": "pf-midnight-bells-003",
+              "eventId": "midnight-bells",
+              "speaker": null,
+              "content": {
+                "dialogue": "莎乐美的身影在第十二声钟响中融入夜色。暗红色长发是最后消失的部分，像一缕被风吹散的火焰。",
+                "narration": "1924年开始了。关于她的故事，才刚刚开始。"
+              },
+              "ratified": ["salome", "krosov", "goering"]
+            }
+          ]
         }
       ],
       "locations": [
