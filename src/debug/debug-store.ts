@@ -15,6 +15,7 @@ export type GamePhase =
   | 'timeline'
   | 'director'
   | 'render'
+  | 'preset'
   | 'reflection'
   | 'waiting_input'
   | 'error';

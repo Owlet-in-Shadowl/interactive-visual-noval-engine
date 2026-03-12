@@ -82,11 +82,12 @@ export interface NovelRuntimeContext extends ContextEngineRuntimeContext {
 export interface IContextEngine {
   readonly info: ContextEngineInfo;
   bootstrap?(params: { sessionId: string; sessionFile: string }): Promise<BootstrapResult>;
-  ingest(params: { sessionId: string; message: AgentMessage; isHeartbeat?: boolean }): Promise<IngestResult>;
+  ingest(params: { sessionId: string; message: AgentMessage; isHeartbeat?: boolean; pfMetadata?: { pfId: string; participationRole: string; knownPeers: string[]; involvedCharacters: string[] } }): Promise<IngestResult>;
   ingestBatch?(params: { sessionId: string; messages: AgentMessage[]; isHeartbeat?: boolean }): Promise<IngestBatchResult>;
   assemble(params: { sessionId: string; messages: AgentMessage[]; tokenBudget?: number }): Promise<AssembleResult>;
   compact(params: { sessionId: string; sessionFile: string; tokenBudget?: number; force?: boolean; currentTokenCount?: number; compactionTarget?: 'budget' | 'threshold'; customInstructions?: string; runtimeContext?: ContextEngineRuntimeContext }): Promise<CompactResult>;
   afterTurn?(params: { sessionId: string; sessionFile: string; messages: AgentMessage[]; prePromptMessageCount: number; autoCompactionSummary?: string; isHeartbeat?: boolean; tokenBudget?: number; runtimeContext?: ContextEngineRuntimeContext }): Promise<void>;
+  getRecentMemories?(sessionId: string, count: number): EpisodicMemory[];
   prepareSubagentSpawn?(params: { parentSessionKey: string; childSessionKey: string; ttlMs?: number }): Promise<SubagentSpawnPreparation | undefined>;
   onSubagentEnded?(params: { childSessionKey: string; reason: SubagentEndReason }): Promise<void>;
   dispose?(): Promise<void>;
@@ -183,6 +184,13 @@ export class NovelContextEngine implements IFullContextEngine {
     sessionId: string;
     message: AgentMessage;
     isHeartbeat?: boolean;
+    /** PF metadata — merged into EpisodicMemory when present */
+    pfMetadata?: {
+      pfId: string;
+      participationRole: string;
+      knownPeers: string[];
+      involvedCharacters: string[];
+    };
   }): Promise<IngestResult> {
     if (params.isHeartbeat) return { ingested: false };
 
@@ -194,6 +202,13 @@ export class NovelContextEngine implements IFullContextEngine {
       timestamp: Date.now(),
       importance: this.estimateImportance(params.message.content),
       type: this.classifyMessageType(params.message),
+      // PF fields (optional)
+      ...(params.pfMetadata && {
+        pfId: params.pfMetadata.pfId,
+        participationRole: params.pfMetadata.participationRole as EpisodicMemory['participationRole'],
+        knownPeers: params.pfMetadata.knownPeers,
+        involvedCharacters: params.pfMetadata.involvedCharacters,
+      }),
     };
 
     this.episodicStore.add(params.sessionId, memory);
@@ -271,7 +286,7 @@ export class NovelContextEngine implements IFullContextEngine {
     };
   }
 
-  // ─── compact (Reflection入口) ──────────────────────────
+  // ─── compact (纯记忆压缩，不含业务逻辑) ─────────────────
 
   async compact(params: {
     sessionId: string;
@@ -288,7 +303,6 @@ export class NovelContextEngine implements IFullContextEngine {
       return { ok: true, compacted: false };
     }
 
-    // MVP: simple compaction by keeping only important memories
     const important = memories.filter((m) => m.importance > 0.5);
     this.episodicStore.clear(params.sessionId);
     this.episodicStore.addBatch(params.sessionId, important);
@@ -361,6 +375,13 @@ export class NovelContextEngine implements IFullContextEngine {
 
   async dispose(): Promise<void> {
     // Nothing to clean up in MVP in-memory store
+  }
+
+  // ─── getRecentMemories ────────────────────────────────
+
+  getRecentMemories(sessionId: string, count: number): EpisodicMemory[] {
+    const all = this.episodicStore.getAll(sessionId);
+    return all.slice(-count);
   }
 
   // ─── Public helpers ────────────────────────────────────

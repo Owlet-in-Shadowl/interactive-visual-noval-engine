@@ -105,4 +105,32 @@ export class Timeline {
   getLocationName(id: string): string {
     return this.locations.find((l) => l.id === id)?.name ?? id;
   }
+
+  // ─── P0：预置场景支持 ─────────────────────────────────
+
+  /**
+   * 查看下一个未处理的事件（不消费、不推进时间）
+   */
+  peekNextEvent(): WorldEvent | null {
+    return (
+      this.events.find((e) => e.time > this.currentTime) ?? null
+    );
+  }
+
+  /**
+   * 时间跳转到指定事件
+   */
+  advanceToEvent(eventId: string): void {
+    const event = this.events.find((e) => e.id === eventId);
+    if (event && event.time >= this.currentTime) {
+      this.currentTime = event.time;
+    }
+  }
+
+  /**
+   * 判断事件是否有参与框架（预置内容）
+   */
+  hasFrames(event: WorldEvent): boolean {
+    return Array.isArray(event.frames) && event.frames.length > 0;
+  }
 }

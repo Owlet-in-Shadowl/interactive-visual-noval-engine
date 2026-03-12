@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { SceneOutput } from '../memory/schemas';
+import { usePlayerStore } from '../player/player-store';
 import { T } from '../theme';
 import {
   Smile, Frown, Angry, Zap,
@@ -24,6 +25,7 @@ interface GameRendererProps {
 function useTypewriter(text: string, speed: number = 50) {
   const [displayed, setDisplayed] = useState('');
   const [isComplete, setIsComplete] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     setDisplayed('');
@@ -31,19 +33,32 @@ function useTypewriter(text: string, speed: number = 50) {
     if (!text) return;
 
     let index = 0;
-    const timer = setInterval(() => {
+    timerRef.current = setInterval(() => {
       index++;
       setDisplayed(text.slice(0, index));
       if (index >= text.length) {
-        clearInterval(timer);
+        if (timerRef.current) clearInterval(timerRef.current);
+        timerRef.current = null;
         setIsComplete(true);
       }
     }, speed);
 
-    return () => clearInterval(timer);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [text, speed]);
 
-  return { displayed, isComplete };
+  /** 跳过打字机，直接显示全文 */
+  const skipToEnd = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setDisplayed(text);
+    setIsComplete(true);
+  }, [text]);
+
+  return { displayed, isComplete, skipToEnd };
 }
 
 export function GameRenderer({
@@ -77,17 +92,27 @@ export function GameRenderer({
   const displayText = currentScene
     ? (currentScene.dialogue || currentScene.narration || '')
     : '';
-  const { displayed, isComplete } = useTypewriter(displayText, 40);
+  const { displayed, isComplete, skipToEnd } = useTypewriter(displayText, 40);
 
-  // When typewriter completes, wait briefly then move scene to history
-  useEffect(() => {
-    if (!isComplete || !currentScene) return;
-    const timer = setTimeout(() => {
-      setHistory((h) => [...h, currentScene]);
-      setCurrentScene(null);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [isComplete, currentScene]);
+  // Click handler: skip typewriter → advance to next scene → end preset sequence
+  const handleAdvance = useCallback(() => {
+    if (!currentScene) return;
+
+    // If typewriter still running, skip to end first
+    if (!isComplete) {
+      skipToEnd();
+      return;
+    }
+
+    // Move current scene to history
+    setHistory((h) => [...h, currentScene]);
+    setCurrentScene(null);
+
+    // If this was the last scene and preset is active, resolve the promise
+    if (queue.length === 0 && usePlayerStore.getState().presetScenesActive) {
+      usePlayerStore.getState().endPresetSequence();
+    }
+  }, [currentScene, isComplete, skipToEnd, queue.length]);
 
   // Auto-scroll history
   useEffect(() => {
@@ -141,9 +166,9 @@ export function GameRenderer({
         </div>
       </div>
 
-      {/* Dialogue box — current scene with typewriter */}
+      {/* Dialogue box — current scene with typewriter, click to advance */}
       {currentScene && (
-        <div style={styles.dialogueBox}>
+        <div style={styles.dialogueBox} onClick={handleAdvance}>
           {currentScene.narration && currentScene.dialogue && (
             <p style={styles.narration}>{currentScene.narration}</p>
           )}
@@ -167,12 +192,17 @@ export function GameRenderer({
               {!isComplete && <span style={styles.cursor}>▊</span>}
             </p>
           </div>
-          {/* Queue indicator */}
-          {queue.length > 0 && (
-            <div style={styles.queueHint}>
-              还有 {queue.length} 段...
-            </div>
-          )}
+          {/* Advance indicator or queue count */}
+          <div style={styles.advanceArea}>
+            {isComplete && (
+              <span style={styles.advanceHint}>▼</span>
+            )}
+            {queue.length > 0 && (
+              <span style={styles.queueHint}>
+                还有 {queue.length} 段
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -248,6 +278,8 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: '140px',
     flexShrink: 0,
     boxShadow: T.shadowCard,
+    cursor: 'pointer',
+    userSelect: 'none',
   },
   narration: {
     fontStyle: 'italic',
@@ -287,12 +319,23 @@ const styles: Record<string, React.CSSProperties> = {
     animation: 'blink 1s infinite',
     color: T.accent,
   },
+  advanceArea: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: '8px',
+    minHeight: '18px',
+  },
+  advanceHint: {
+    color: T.accent,
+    fontSize: '14px',
+    animation: 'blink 1.2s infinite',
+  },
   queueHint: {
-    textAlign: 'right',
     color: T.textMuted,
     fontSize: '11px',
-    marginTop: '8px',
     fontFamily: T.fontSans,
+    marginLeft: 'auto',
   },
   emptyHint: {
     color: T.textMuted,

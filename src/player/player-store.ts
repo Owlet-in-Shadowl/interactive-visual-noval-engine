@@ -32,6 +32,10 @@ export interface PlayerState {
   // Chat history (displayed in the input area)
   chatHistory: ChatMessage[];
 
+  // Preset scene synchronization
+  presetScenesActive: boolean;
+  presetAdvanceResolver: (() => void) | null;
+
   // Actions
   setMode: (mode: 'autonomous' | 'intervention') => void;
   toggleAutoPause: () => void;
@@ -41,6 +45,8 @@ export interface PlayerState {
   addNarratorMessage: (content: string) => void;
   addCharacterMessage: (speaker: string, content: string) => void;
   addSystemMessage: (content: string) => void;
+  beginPresetSequence: () => Promise<void>;
+  endPresetSequence: () => void;
 }
 
 function genId(): string {
@@ -53,6 +59,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   dynamicGoapEnabled: false,
   pendingMessage: null,
   chatHistory: [],
+  presetScenesActive: false,
+  presetAdvanceResolver: null,
 
   setMode: (mode) => {
     set({ mode });
@@ -120,5 +128,17 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       timestamp: Date.now(),
     };
     set((s) => ({ chatHistory: [...s.chatHistory, msg] }));
+  },
+
+  beginPresetSequence: () => {
+    return new Promise<void>((resolve) => {
+      set({ presetScenesActive: true, presetAdvanceResolver: resolve });
+    });
+  },
+
+  endPresetSequence: () => {
+    const resolver = get().presetAdvanceResolver;
+    set({ presetScenesActive: false, presetAdvanceResolver: null });
+    if (resolver) resolver();
   },
 }));

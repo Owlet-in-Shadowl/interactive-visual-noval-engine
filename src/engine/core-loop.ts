@@ -11,23 +11,25 @@
  * ⑦ Player input injection (if intervention mode)
  * ⑧ Post-processing (ContextEngine.afterTurn)
  * ⑨ Auto-pause check (if autoPauseOnTaskDone)
+ * ⑩ Reflection (conditional: significant event or memory threshold)
  */
 
-import { NovelContextEngine } from '../memory/context-engine';
-import type { AssembleResult, AgentMessage } from '../memory/context-engine';
+import type { IFullContextEngine, AssembleResult, AgentMessage } from '../memory/context-engine';
 import { useCharacterStore } from '../memory/character-store';
 import { runCognition } from '../agents/cognition';
 import { runDirector } from '../agents/director';
+import { runReflection } from '../agents/reflection';
 import { generateGoapAction } from '../agents/goap-generator';
 import { planActions, mapGoalToGOAPState } from '../goap/planner';
 import { Timeline } from '../timeline/timeline';
 import { useDebugStore } from '../debug/debug-store';
 import { usePlayerStore } from '../player/player-store';
-import type { GOAPAction, SceneOutput, WorldEvent, Goal5W1H } from '../memory/schemas';
+import type { GOAPAction, SceneOutput, WorldEvent, Goal5W1H, EpisodicMemory } from '../memory/schemas';
+import { framesToScenes, projectAllMemories } from '../pf';
 
 export interface CoreLoopConfig {
   characterId: string;
-  contextEngine: NovelContextEngine;
+  contextEngine: IFullContextEngine;
   timeline: Timeline;
   goapActions: GOAPAction[];
   onScenesReady: (scenes: SceneOutput[]) => void;
@@ -87,6 +89,8 @@ export class CoreLoop {
 
   stop() {
     this.running = false;
+    // 防止 beginPresetSequence 的 Promise 永远挂起
+    usePlayerStore.getState().endPresetSequence();
   }
 
   pause() {
@@ -105,6 +109,15 @@ export class CoreLoop {
   private async runOneCycle(): Promise<void> {
     const { contextEngine, timeline, goapActions, characterId } = this.config;
     const debug = useDebugStore.getState();
+
+    // ─── 快速路径：预置场景（PF 信源） ───
+    const nextEvent = timeline.peekNextEvent();
+    if (nextEvent && timeline.hasFrames(nextEvent)) {
+      await this.playPresetEvent(nextEvent);
+      return;
+    }
+
+    // ─── 现有 AI 管线 ───
     const charStore = useCharacterStore.getState();
     const persona = charStore.getPersona(characterId);
     if (!persona) throw new Error(`Character ${characterId} not found`);
@@ -264,14 +277,16 @@ export class CoreLoop {
       }
     }
 
-    // ⑧ Post-processing
-    debug.setPhase('idle');
+    // ⑧ Post-processing (memory compaction)
     await contextEngine.afterTurn({
       sessionId: this.sessionId,
       sessionFile: `memory/${characterId}.session.json`,
       messages: [],
       prePromptMessageCount: 0,
     });
+
+    // ⑩ Reflection (conditional: significant event or memory threshold)
+    await this.maybeReflect(characterId, persona, debug);
 
     // Update timeline display
     debug.setTimeline({
@@ -286,6 +301,68 @@ export class CoreLoop {
 
     // Small delay between cycles for readability
     await this.sleep(2000);
+  }
+
+  /**
+   * 预置场景播放：PF frames → 渲染投影 + 记忆投影
+   * 跳过整个 AI 管线（cognition/GOAP/director），直接从编剧数据渲染。
+   */
+  private async playPresetEvent(event: WorldEvent): Promise<void> {
+    const { contextEngine, timeline, characterId } = this.config;
+    const debug = useDebugStore.getState();
+
+    // 1. 时间推进到事件
+    timeline.advanceToEvent(event.id);
+
+    // 2. Debug phase
+    debug.setPhase('preset');
+
+    // 3. 渲染投影：frames → SceneOutput[]（只包含 POV 角色能看到的）
+    const scenes = framesToScenes(event.frames!, characterId);
+
+    // 4. 发送到渲染器 + 记录到 debug
+    debug.setScenes(scenes);
+    this.config.onScenesReady(scenes);
+
+    // 5. 等待玩家点击完所有场景
+    await usePlayerStore.getState().beginPresetSequence();
+
+    // 6. 记忆投影入库（带 PF 元数据）
+    const projections = projectAllMemories(event.frames!, characterId);
+    for (const proj of projections) {
+      await contextEngine.ingest({
+        sessionId: this.sessionId,
+        message: {
+          role: proj.participationRole === 'speaker' ? 'assistant' : 'user',
+          content: proj.filteredContent,
+        },
+        pfMetadata: {
+          pfId: proj.pfId,
+          participationRole: proj.participationRole,
+          knownPeers: proj.knownPeers,
+          involvedCharacters: proj.involvedCharacters,
+        },
+      });
+    }
+
+    // 7. 事件本身作为世界事件入库
+    await contextEngine.ingest({
+      sessionId: this.sessionId,
+      message: {
+        role: 'system',
+        content: `[世界事件] ${event.name}：${event.description}`,
+      },
+    });
+
+    // 8. 后处理
+    await contextEngine.afterTurn({
+      sessionId: this.sessionId,
+      sessionFile: `memory/${characterId}.session.json`,
+      messages: [],
+      prePromptMessageCount: 0,
+    });
+
+    debug.setPhase('idle');
   }
 
   /**
@@ -431,6 +508,67 @@ export class CoreLoop {
 
     // Pause to let player read
     await this.sleep(2000);
+  }
+
+  /**
+   * ⑩ Conditionally run Reflection Agent.
+   * Triggered when recent memories contain significant events (importance > 0.7).
+   * Produces PersonaShift that evolves character personality over time.
+   */
+  private async maybeReflect(
+    characterId: string,
+    persona: NonNullable<ReturnType<typeof useCharacterStore.getState.prototype.getPersona>>,
+    debug: ReturnType<typeof useDebugStore.getState>,
+  ): Promise<void> {
+    const { contextEngine } = this.config;
+
+    // Check trigger: any recent memory with high importance
+    const recentMemories = contextEngine.getRecentMemories(this.sessionId, 20);
+    const hasSignificant = recentMemories.slice(-5).some((m) => m.importance > 0.7);
+    if (!hasSignificant) return;
+
+    debug.setPhase('reflection');
+
+    try {
+      const charStore = useCharacterStore.getState();
+      const existingShifts = charStore.getPersonaShifts(characterId);
+      const activeGoals = charStore.getGoals(characterId).shortTerm
+        .filter((g) => g.status === 'active')
+        .map((g) => g.goal);
+
+      const result = await runReflection({
+        persona,
+        recentMemories,
+        existingShifts,
+        currentGoals: activeGoals,
+      });
+
+      debug.pushTrace({
+        agent: 'reflection',
+        duration: result.durationMs,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+        timestamp: Date.now(),
+      });
+
+      if (result.shift) {
+        charStore.applyPersonaShift(characterId, result.shift);
+
+        // Record the reflection as a memory
+        await contextEngine.ingest({
+          sessionId: this.sessionId,
+          message: {
+            role: 'assistant',
+            content: `[反思] ${result.shift.trigger} → ${result.shift.description}`,
+          },
+        });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      debug.pushError(`Reflection Agent 失败: ${msg}`);
+    }
+
+    debug.setPhase('idle');
   }
 
   private describeSituation(timeline: Timeline): string {

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ParticipationFrameSchema, ParticipationRoleSchema } from '../../pf/schema';
 
 // ─── 角色人格 Schema ─────────────────────────────────────
 
@@ -57,6 +58,11 @@ export const WorldEventSchema = z.object({
   location: z.string(),
   affectedCharacters: z.array(z.string()).optional(),
   severity: z.enum(['minor', 'major', 'critical']),
+  // ─── P0：参与框架（PF 为唯一信源） ───
+  frames: z.array(ParticipationFrameSchema).optional()
+    .describe('参与框架序列。有 → 预置模式（渲染和记忆从 frames 投影），无 → AI 模式'),
+  anchorLevel: z.enum(['fixed', 'strong', 'soft']).optional()
+    .describe('锚点强度。fixed=不可改变, strong=AI须收敛, soft=可跳过'),
 });
 
 export const WorldStateSchema = z.object({
@@ -101,6 +107,11 @@ export const EpisodicMemorySchema = z.object({
   timestamp: z.number(),
   importance: z.number().min(0).max(1),
   type: z.enum(['action', 'dialogue', 'observation', 'world_event', 'reflection']),
+  // ─── P0：参与框架元数据（可溯源、可重算） ───
+  pfId: z.string().optional().describe('引用回源参与框架 ID'),
+  participationRole: ParticipationRoleSchema.optional().describe('该角色在 PF 中的参与身份'),
+  knownPeers: z.array(z.string()).optional().describe('该角色认为还有谁也知道此事'),
+  involvedCharacters: z.array(z.string()).optional().describe('核心角色（speaker + addressee）'),
 });
 
 // ─── 角色完整状态 Schema ─────────────────────────────────
