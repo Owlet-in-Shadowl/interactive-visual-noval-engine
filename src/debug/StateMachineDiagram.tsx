@@ -20,7 +20,7 @@ import { T } from '../theme';
 import {
   Pause, Package, Brain, Route, Wand2, Clock,
   PenTool, Play, RefreshCw, MessageCircle, AlertTriangle,
-  Zap, Database,
+  Zap, Database, BookOpen, Hand, Layers,
 } from 'lucide-react';
 import type { LucideProps } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -28,7 +28,7 @@ import type { ComponentType } from 'react';
 const ICON_MAP: Record<string, ComponentType<LucideProps>> = {
   Pause, Package, Brain, Route, Wand2, Clock,
   PenTool, Play, RefreshCw, MessageCircle, AlertTriangle,
-  Zap, Database,
+  Zap, Database, BookOpen, Hand, Layers,
 };
 
 /* ── CE accent color ── */
@@ -56,6 +56,55 @@ export function StateMachineDiagram({ phase, prevPhase, phaseStartedAt, phaseDur
     const tHw = t.kind === 'ce' ? CE_W / 2 : NODE_W / 2;
     const tHh = t.kind === 'ce' ? CE_H / 2 : NODE_H / 2;
 
+    // ── Special paths ──
+
+    // ce_render → idle: left-side loop back to top
+    if (e.from === 'ce_render' && e.to === 'idle') {
+      const lx = f.x - fHw - 16;
+      return `M${f.x - fHw},${f.y} L${lx},${f.y} L${lx},${t.y} L${t.x - tHw},${t.y}`;
+    }
+
+    // ce_preset_at → idle: right-side loop back to top
+    if (e.from === 'ce_preset_at' && e.to === 'idle') {
+      const rx = f.x + fHw + 16;
+      return `M${f.x + fHw},${f.y} L${rx},${f.y} L${rx},${t.y} L${t.x + tHw},${t.y}`;
+    }
+
+    // reflection → idle: loop from bottom center back to top
+    if (e.from === 'reflection' && e.to === 'idle') {
+      const lx = f.x - fHw - 8;
+      return `M${f.x - fHw},${f.y} L${lx},${f.y} L${lx},${t.y + tHh + 2} L${t.x},${t.y + tHh + 2}`;
+    }
+
+    // idle → waiting_input: short horizontal (same row roughly)
+    if (e.from === 'idle' && e.to === 'waiting_input') {
+      return `M${f.x},${f.y + fHh} L${t.x},${t.y - tHh}`;
+    }
+
+    // waiting_input → ce_idle: curve down-left
+    if (e.from === 'waiting_input' && e.to === 'ce_idle') {
+      const mx = (f.x + t.x) / 2;
+      return `M${f.x},${f.y + fHh} C${mx},${f.y + 30}, ${mx},${t.y}, ${t.x + tHw},${t.y}`;
+    }
+
+    // idle → ce_idle: diagonal down-left
+    if (e.from === 'idle' && e.to === 'ce_idle') {
+      return `M${f.x - fHw},${f.y + fHh * 0.5} C${t.x + tHw + 15},${f.y + 15}, ${t.x + tHw + 5},${t.y - 8}, ${t.x},${t.y - tHh}`;
+    }
+
+    // idle → preset_render: diagonal down-right
+    if (e.from === 'idle' && e.to === 'preset_render') {
+      return `M${f.x + fHw},${f.y + fHh * 0.5} C${t.x - tHw - 15},${f.y + 15}, ${t.x - tHw - 5},${t.y - 8}, ${t.x},${t.y - tHh}`;
+    }
+
+    // ce_render → reflection: down from left to center
+    if (e.from === 'ce_render' && e.to === 'reflection') {
+      const mx = (f.x + t.x) / 2;
+      return `M${f.x},${f.y + fHh} C${mx},${f.y + 15}, ${mx},${t.y - 15}, ${t.x},${t.y - tHh}`;
+    }
+
+    // ── Generic paths ──
+
     // Same column, going down
     if (f.x === t.x && f.y < t.y) {
       return `M${f.x},${f.y + fHh} L${t.x},${t.y - tHh}`;
@@ -65,23 +114,6 @@ export function StateMachineDiagram({ phase, prevPhase, phaseStartedAt, phaseDur
     if (Math.abs(f.y - t.y) < 2) {
       const d = f.x < t.x ? 1 : -1;
       return `M${f.x + d * fHw},${f.y} L${t.x - d * tHw},${t.y}`;
-    }
-
-    // ce_render → idle: left-side loop back to top
-    if (e.from === 'ce_render' && e.to === 'idle') {
-      const lx = f.x - fHw - 14;
-      return `M${f.x - fHw},${f.y} L${lx},${f.y} L${lx},${t.y} L${t.x - tHw},${t.y}`;
-    }
-
-    // reflection → idle: right-side loop
-    if (e.from === 'reflection' && e.to === 'idle') {
-      const rx = f.x + fHw + 10;
-      return `M${f.x + fHw},${f.y} L${rx},${f.y} L${rx},${t.y} L${t.x + tHw},${t.y}`;
-    }
-
-    // waiting_input → assemble: curve
-    if (e.from === 'waiting_input' && e.to === 'assemble') {
-      return `M${f.x},${f.y + fHh} C${f.x},${t.y}, ${t.x + tHw + 30},${t.y}, ${t.x + tHw},${t.y}`;
     }
 
     // Cross-column, down-right
