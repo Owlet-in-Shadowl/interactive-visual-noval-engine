@@ -27,8 +27,8 @@ export function framesToScenes(
     })
     .map((f) => ({
       speaker: f.speaker,
-      dialogue: f.content.dialogue,
-      narration: f.content.narration,
+      dialogue: f.content.text,
+      narration: f.content.stage,
       emotion: f.content.emotion,
     }));
 }

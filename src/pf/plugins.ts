@@ -44,13 +44,13 @@ export function getRole(
 
 function buildContentText(frame: ParticipationFrame): string {
   const parts: string[] = [];
-  if (frame.content.narration) {
-    parts.push(frame.content.narration);
+  if (frame.content.stage) {
+    parts.push(frame.content.stage);
   }
-  if (frame.speaker) {
-    parts.push(`${frame.speaker}："${frame.content.dialogue}"`);
+  if (frame.speaker && frame.content.type === 'line') {
+    parts.push(`${frame.speaker}："${frame.content.text}"`);
   } else {
-    parts.push(frame.content.dialogue);
+    parts.push(frame.content.text);
   }
   return parts.join(' ');
 }

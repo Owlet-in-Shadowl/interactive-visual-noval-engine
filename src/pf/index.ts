@@ -7,13 +7,18 @@
 
 // Schema & Types
 export {
-  PFContentSchema,
+  FrameTypeSchema,
+  FrameContentSchema,
   ParticipationRoleSchema,
   ParticipationFrameSchema,
   PFMemoryProjectionSchema,
+  // backwards compat
+  PFContentSchema,
 } from './schema';
 
 export type {
+  FrameType,
+  FrameContent,
   PFContent,
   ParticipationRole,
   ParticipationFrame,
