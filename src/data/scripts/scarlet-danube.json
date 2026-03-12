@@ -315,13 +315,49 @@
           "description": "莎乐美离开金色大厅，翩然奔入夜色中的巷道。暗红长发与曳地裙摆在急行气流中鼓起，像一朵正在剧烈思考的罂粟。她不是在逃跑，而是在引导——将追踪者引入她选定的场域。",
           "location": "alley",
           "affectedCharacters": ["salome", "albert"],
-          "severity": "major"
+          "severity": "major",
+          "anchorLevel": "strong",
+          "frames": [
+            {
+              "id": "pf-salome-exits-001",
+              "eventId": "salome-exits",
+              "speaker": null,
+              "content": {
+                "dialogue": "屋宇和屋宇间，狭小的巷道。暗红的长发，曳地的裙摆——系带皮鞋的鞋跟在潮湿的石板路上踏出的节奏，有别于逃跑，又无法被简单称作散步。",
+                "narration": "维也纳老城·巷道"
+              },
+              "ratified": ["salome"],
+              "eavesdroppers": ["albert"]
+            },
+            {
+              "id": "pf-salome-exits-002",
+              "eventId": "salome-exits",
+              "speaker": null,
+              "content": {
+                "dialogue": "裙裾在急行的气流中微微鼓起，像一朵正在剧烈思考的罂粟。在无人目击的黑暗里，恰好盛放。致命地。",
+                "style": "italic"
+              },
+              "ratified": ["salome"],
+              "eavesdroppers": ["albert"]
+            },
+            {
+              "id": "pf-salome-exits-003",
+              "eventId": "salome-exits",
+              "speaker": null,
+              "content": {
+                "dialogue": "就这样翩然地奔跑着，像是在逃避着什么，恍惚间却又容易被误解成优雅舞步般奔跑着，遁入比黑暗更深的黑暗里。",
+                "narration": "远处，交响乐的震颤已无法触及这片隐秘。"
+              },
+              "ratified": ["salome"],
+              "eavesdroppers": ["albert"]
+            }
+          ]
         },
         {
           "id": "albert-intercepts",
           "time": 660,
           "name": "阿尔伯特截获莎乐美",
-          "description": "阿尔伯特在巷道转角处以战壕刀抵住莎乐美的颈间，要求她交出弗洛伊德未公开的研究材料。然而莎乐美以绝对的从容回应威胁，反客为主——她知道自己是唯一的钥匙，任何想开门的人都不能毁掉她。",
+          "description": "阿尔伯特在巷道转角处以战壕刀抵住莎乐美的颈间。莎乐美以绝对的从容反客为主，揭示他的身份，迫使他自报姓名。他提出条件——交出弗洛伊德未公开的研究材料，换取华盛顿的研究条件。然而莎乐美洞察到自己是唯一的钥匙，以安德利亚斯婚姻为喻，揭示真正被挟持的人是阿尔伯特。",
           "location": "alley",
           "affectedCharacters": ["salome", "albert"],
           "severity": "critical",
@@ -332,20 +368,19 @@
               "eventId": "albert-intercepts",
               "speaker": null,
               "content": {
-                "dialogue": "巷道在这里拐了一个九十度的直角弯。路灯的光被建筑切割成锐利的三角形，铺在湿漉漉的石板路面上。",
-                "narration": "维也纳老城巷道深处"
+                "dialogue": "阿尔伯特·霍利曼定定地注视着女人的双眼。血色长发，血色红唇，血色裙裳。血色之中，唯一的幽蓝。",
+                "narration": "巷道转角处"
               },
-              "ratified": ["albert", "salome"]
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
             },
             {
               "id": "pf-albert-intercepts-002",
               "eventId": "albert-intercepts",
-              "speaker": "albert",
-              "addressee": "salome",
+              "speaker": null,
               "content": {
-                "dialogue": "别动。",
-                "narration": "战壕刀的刀背贴上了她的颈侧。阿尔伯特从阴影中现身，宽檐礼帽下的目光沉重而锋利。",
-                "emotion": "determined"
+                "dialogue": "一柄战壕刀——带锯齿背脊的战争遗留物——无声地紧贴在她天鹅般优美的颈间。虽然这是他和对方的第一次对视，但他自诩比她的任何朋友亲人都更了解她的一切。正是因为了解，所以才更加不安。",
+                "style": "italic"
               },
               "ratified": ["albert", "salome"],
               "eavesdroppers": ["goering"]
@@ -356,9 +391,9 @@
               "speaker": "salome",
               "addressee": "albert",
               "content": {
-                "dialogue": "你的刀法很稳。但你不会用它的。",
-                "narration": "莎乐美没有回头，幽蓝色瞳孔在黑暗中微微发光。",
-                "emotion": "neutral"
+                "dialogue": "邀请一位女士之前，不先通报姓名——这不是绅士的做法，来自大西洋彼岸的先生。",
+                "narration": "清丽的声音。德语的精确感在她嘴里以某种难以归类的方式松动了。",
+                "emotion": "calm"
               },
               "ratified": ["albert", "salome"],
               "eavesdroppers": ["goering"]
@@ -369,8 +404,8 @@
               "speaker": "albert",
               "addressee": "salome",
               "content": {
-                "dialogue": "弗洛伊德的研究。后半部分。你知道我要什么。",
-                "emotion": "determined"
+                "dialogue": "其一，这不是邀请。其二，既然您知道我的身份，也应当了解——从事我们这一行的人，在任何处境下都不会报出真名。",
+                "emotion": "cold"
               },
               "ratified": ["albert", "salome"],
               "eavesdroppers": ["goering"]
@@ -381,9 +416,235 @@
               "speaker": "salome",
               "addressee": "albert",
               "content": {
-                "dialogue": "你拿着刀的手很稳，先生。可你的眼睛不是杀手的眼睛。你杀过人，但每一个你都记得。",
-                "narration": "她缓缓转过身来，刀刃随之滑到她的喉前。她看着他，像在看一幅值得细细品味的画。",
-                "emotion": "neutral"
+                "dialogue": "不。你会告诉我的。",
+                "narration": "对于他冷漠低沉的回应，女人却露出了笑容。对视持续。",
+                "emotion": "amused"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-albert-intercepts-006",
+              "eventId": "albert-intercepts",
+              "speaker": "albert",
+              "addressee": "salome",
+              "content": {
+                "dialogue": "阿尔伯特·霍利曼。调查局。",
+                "narration": "不知过了多久，当他发觉自己开始有些恍神之后，终于深吸一口气，短暂地移开视线。",
+                "emotion": "reluctant"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-albert-intercepts-007",
+              "eventId": "albert-intercepts",
+              "speaker": "salome",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "那么请问，伟大的民主卫士不远万里来到维也纳，要在举国欢庆的新年夜里扣押一个无足轻重的弱女子——这是为什么呢？",
+                "emotion": "playful"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-albert-intercepts-008",
+              "eventId": "albert-intercepts",
+              "speaker": "albert",
+              "addressee": "salome",
+              "content": {
+                "dialogue": "莎乐美小姐，装傻没有意义。我们对弗洛伊德医生的精神分析理论本身没有任何兴趣——我们需要的是基于该理论延伸出的方法论，那份从未公开的后半部分。",
+                "narration": "阿尔伯特眯起眼睛，轻轻活动了一下僵在女人颈间的持刀手腕。月光映在刀面，流动得像水银。",
+                "emotion": "determined"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-albert-intercepts-009",
+              "eventId": "albert-intercepts",
+              "speaker": "albert",
+              "addressee": "salome",
+              "content": {
+                "dialogue": "今年四月，您的导师在哥廷根被确诊为颚部癌变。为了保护这份研究，他将之转交于您。此后您便携着它辗转藏匿。令我意外的是，今夜您竟公然出席演奏会。",
+                "emotion": "cold"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-albert-intercepts-010",
+              "eventId": "albert-intercepts",
+              "speaker": "albert",
+              "addressee": "salome",
+              "content": {
+                "dialogue": "如果您选择配合，我们可以在华盛顿的公共卫生局研究部门为您提供完善的工作条件——当然，地点不会是这里。",
+                "narration": "面对稍微收敛了笑容、沉默不语的红发女人，阿尔伯特轻嗤一声抬起下巴。",
+                "emotion": "cold"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-albert-intercepts-011",
+              "eventId": "albert-intercepts",
+              "speaker": "salome",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "以谎言开口，不是绅士的做法。",
+                "narration": "月光，悄然流转。",
+                "emotion": "calm"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-albert-intercepts-012",
+              "eventId": "albert-intercepts",
+              "speaker": "salome",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "在执行任务之前，您一定调查过我的生平。那么您也应当知道，我有过一段并不愉快的婚姻。卡尔·安德利亚斯——那个无趣的男人，以自刺相威胁，用最卑劣的手段实现了尼采始终做不到的事……但您也知道后来发生了什么，不是吗？",
+                "emotion": "reflective"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-albert-intercepts-013",
+              "eventId": "albert-intercepts",
+              "speaker": "salome",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "他以为一纸婚约就能将我囚禁其中。结果那段婚姻反而成了我的护盾，让我可以自由往来……最有趣的是，三十八岁那年我与里尔克返回俄国，还邀请了丈夫同行。他当时的表情，和您现在颇有几分相似，阿尔伯特先生。",
+                "emotion": "amused"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-albert-intercepts-014",
+              "eventId": "albert-intercepts",
+              "speaker": "salome",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "请不要摆出这样的表情。我们都很清楚——至少就目前而言，您还没有终结我的权力……因为如果你们真有把握独立破解这份研究，就不会让我活着听见今夜的钟声。我说得没错吧？",
+                "narration": "纯粹出于下意识，阿尔伯特向后退了半步。她清楚他不能动手，因此根本不必伪装恐惧。从某种意义上说，是她在挟持他。",
+                "emotion": "calm"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-albert-intercepts-015",
+              "eventId": "albert-intercepts",
+              "speaker": "albert",
+              "addressee": "salome",
+              "content": {
+                "dialogue": "总之，请先随我走。我相信双方可以找到令人满意的折衷方案。",
+                "narration": "他压低帽檐，绕至女人身后，反手扣住她的手腕。六十二岁的女人的手腕。他不明白自己为何会在此刻注意这件事。",
+                "emotion": "reluctant"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            }
+          ]
+        },
+        {
+          "id": "sniper-warning",
+          "time": 690,
+          "name": "狙击手锁定·反转",
+          "description": "尼古拉通过无线电警告阿尔伯特：十点钟方向有狙击手锁定。然而莎乐美揭示自己恰好站在阿尔伯特的十点钟方向——只要他不贸然移动就不会有危险，但任何位置变化都将致命。阿尔伯特猛然意识到，自己从一开始就错估了这个女人的量级。",
+          "location": "alley",
+          "affectedCharacters": ["salome", "albert", "nikolai", "irina"],
+          "severity": "critical",
+          "anchorLevel": "fixed",
+          "frames": [
+            {
+              "id": "pf-sniper-warning-001",
+              "eventId": "sniper-warning",
+              "speaker": null,
+              "content": {
+                "dialogue": "女人没有移动半步。系带皮鞋的鞋跟像楔子一样嵌入石板路的缝隙，纹丝不动。",
+                "narration": "阿尔伯特试图带她离开，但——"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-sniper-warning-002",
+              "eventId": "sniper-warning",
+              "speaker": "salome",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "拦住您的不是我。您还没发现吗？很快就会了。",
+                "narration": "女人轻描淡写的声音打断了他的话语。就在这时，阿尔伯特腰间的无线电发出了嘈杂的噪声。",
+                "emotion": "calm"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-sniper-warning-003",
+              "eventId": "sniper-warning",
+              "speaker": "nikolai",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "秃鹫，秃鹫，这里是鹊鹞。十点钟方向有狙击手锁定你。注意。",
+                "narration": "那个熟悉的声音从话筒里传来——语气一贯地漫不经心，仿佛在描述一件与己无关的趣事。",
+                "emotion": "casual"
+              },
+              "ratified": ["albert", "nikolai"],
+              "overhearers": ["salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-sniper-warning-004",
+              "eventId": "sniper-warning",
+              "speaker": null,
+              "content": {
+                "dialogue": "阿尔伯特压下喉咙里将要冒出的东西。仅仅是外围警戒，他居然能让一名狙击手渗透进来。然而愤怒毕竟是奢侈品。对方已将他的具体行动纳入了预判范围之内。",
+                "style": "italic"
+              },
+              "ratified": ["albert"],
+              "overhearers": ["salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-sniper-warning-005",
+              "eventId": "sniper-warning",
+              "speaker": "salome",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "不必担心，阿尔伯特先生。我现在站的位置，恰好是您的十点钟方向。只要您不贸然移动，就不会有危险。",
+                "narration": "女人的声音从侧后方传来，温柔，带着一丝难以定义的愉悦。",
+                "emotion": "amused"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-sniper-warning-006",
+              "eventId": "sniper-warning",
+              "speaker": "salome",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "当然，如果我们其中任何一人稍微改变一下位置……",
+                "narration": "黑色皮革手套之下，男人的掌心已经渗出了汗。他猛然意识到，或许自己从一开始就错估了这个名叫露·安德利亚斯·莎乐美的女人的量级。",
+                "emotion": "calm"
+              },
+              "ratified": ["albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-sniper-warning-007",
+              "eventId": "sniper-warning",
+              "speaker": null,
+              "content": {
+                "dialogue": "远处钟楼上，银月轮廓如钩。夜风将一段旋律送过来——低音弦乐器引路，小提琴随后。《罗蕾莱》。莱茵河畔礁石上以歌声令船夫沉入河底的金发女子。",
+                "narration": "而那个正朝他微微偏头、安静等候他开口的女人——她就是——",
+                "style": "italic"
               },
               "ratified": ["albert", "salome"],
               "eavesdroppers": ["goering"]
@@ -394,10 +655,113 @@
           "id": "krosov-arrives",
           "time": 720,
           "name": "克罗索夫现身·三方对峙",
-          "description": "克罗索夫以纳甘M1895枪口对准阿尔伯特现身。三者之间形成力学链条：阿尔伯特的匕首抵着莎乐美，莎乐美的身影遮住狙击角度，克罗索夫的枪口锁定阿尔伯特。任何一方的动作都会破坏平衡。伊丽娜在远处楼顶就位，瞄准镜锁定目标。",
+          "description": "克罗索夫以纳甘M1895枪口对准阿尔伯特现身，同时向莎乐美致以新年祝福。三者之间形成力学链条：阿尔伯特的匕首抵着莎乐美，莎乐美的身影遮住狙击角度，克罗索夫的枪口锁定阿尔伯特。任何一方的动作都会破坏平衡。",
           "location": "alley",
           "affectedCharacters": ["salome", "albert", "krosov", "irina"],
-          "severity": "critical"
+          "severity": "critical",
+          "anchorLevel": "fixed",
+          "frames": [
+            {
+              "id": "pf-krosov-arrives-001",
+              "eventId": "krosov-arrives",
+              "speaker": "krosov",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "新年快乐，霍利曼先生。",
+                "narration": "他推开门，纳甘的枪口在礼节性的语调里径直对准了对方额头。",
+                "emotion": "calm"
+              },
+              "ratified": ["krosov", "albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-krosov-arrives-002",
+              "eventId": "krosov-arrives",
+              "speaker": "krosov",
+              "addressee": "salome",
+              "content": {
+                "dialogue": "新年快乐，莎乐美小姐。",
+                "emotion": "polite"
+              },
+              "ratified": ["krosov", "albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-krosov-arrives-003",
+              "eventId": "krosov-arrives",
+              "speaker": "albert",
+              "addressee": "krosov",
+              "content": {
+                "dialogue": "去年差不多这时候，贵方确实缔造了一项震惊世界的创举。苏维埃社会主义共和国联盟——所以克罗索夫先生如今已是布尔什维克的爪牙了？",
+                "narration": "即便被枪口指着，阿尔伯特依旧扬起下颌。",
+                "emotion": "defiant"
+              },
+              "ratified": ["krosov", "albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-krosov-arrives-004",
+              "eventId": "krosov-arrives",
+              "speaker": "krosov",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "沉湎于旧事，在这里并无意义。在下眼下不过是国家政治保卫总局的一名处长，仅此而已。",
+                "narration": "克罗索夫抬高声音，平静地截断了对方。",
+                "emotion": "calm"
+              },
+              "ratified": ["krosov", "albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-krosov-arrives-005",
+              "eventId": "krosov-arrives",
+              "speaker": null,
+              "content": {
+                "dialogue": "三者之间，一条无形的力学链条：阿尔伯特的匕首抵着莎乐美的颈间；莎乐美的身影恰好遮住了狙击手的射击角度；克罗索夫的枪口锁定着阿尔伯特。任何一方的动作都会破坏平衡，而平衡一旦破坏，结局只有一种。",
+                "style": "italic"
+              },
+              "ratified": ["krosov", "albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-krosov-arrives-006",
+              "eventId": "krosov-arrives",
+              "speaker": "albert",
+              "addressee": "krosov",
+              "content": {
+                "dialogue": "局面的确有些复杂，不是吗。这位女士在我的控制之下，我的性命则悬于您的枪口，而以这样的距离，双方都不会失手。况且您和我一样，需要的是活着的莎乐美小姐。",
+                "emotion": "analytical"
+              },
+              "ratified": ["krosov", "albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-krosov-arrives-007",
+              "eventId": "krosov-arrives",
+              "speaker": "krosov",
+              "addressee": "albert",
+              "content": {
+                "dialogue": "我们和你们不一样。莎乐美同志是苏联公民。无论是曾经的沙俄还是现在的苏联，我们都会保护她的安全——",
+                "narration": "话说到一半，他瞥见了莎乐美的表情。正在朝他微笑。不是求援，也不是感激。只是微笑。那个笑容让他产生了一种不太好的预感。",
+                "emotion": "earnest"
+              },
+              "ratified": ["krosov", "albert", "salome"],
+              "eavesdroppers": ["goering"]
+            },
+            {
+              "id": "pf-krosov-arrives-008",
+              "eventId": "krosov-arrives",
+              "speaker": "albert",
+              "addressee": "krosov",
+              "content": {
+                "dialogue": "理由冠冕堂皇，归根结底，不过是和我们觊觎着同一样东西。这个女人在我手中，我没有打算将她交给你们。只要做出任何过激的动作，我会确保——我们得不到的，你们也别想得到。",
+                "narration": "阿尔伯特的目光变得锋利。",
+                "emotion": "threatening"
+              },
+              "ratified": ["krosov", "albert", "salome"],
+              "eavesdroppers": ["goering"]
+            }
+          ]
         }
       ],
       "locations": [
