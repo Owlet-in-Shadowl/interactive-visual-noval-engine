@@ -1,0 +1,543 @@
+{
+  "metadata": {
+    "id": "scarlet-danube",
+    "name": "血色多瑙河",
+    "description": "1923年12月31日，维也纳跨年夜。四方势力在金色大厅的乐声与多瑙河的月光下，围绕一个足以颠覆世界认知的秘密展开致命博弈。",
+    "author": "血色多瑙河原著",
+    "createdAt": 0,
+    "updatedAt": 0,
+    "version": 1,
+    "source": "uploaded"
+  },
+  "characters": [
+    {
+      "core": {
+        "id": "salome",
+        "name": "莎乐美",
+        "background": "露·安德利亚斯·莎乐美，1861年生于圣彼得堡，沙俄炮兵将领之女。十二岁读康德，十七岁拒绝坚信礼与东正教决裂。1882年结识尼采并拒绝其求婚，此后与里尔克、弗洛伊德等人建立深刻联系。1912年起师从弗洛伊德研究精神分析，成为其最重要的研究伙伴。她是已知的最高阶分裂者——能够以精神之力影响物质世界，其'本我'与'超我'合一，以自己的名字命名。弗洛伊德癌变后将核心研究材料托付于她，她携秘密辗转欧洲，在维也纳跨年夜主动现身，将所有势力引入她预设的棋局。",
+        "personality": [
+          { "trait": "绝对自主", "intensity": 1.0 },
+          { "trait": "智识至上", "intensity": 0.95 },
+          { "trait": "洞察人心", "intensity": 0.95 },
+          { "trait": "从容不迫", "intensity": 0.9 },
+          { "trait": "好奇心驱动", "intensity": 0.85 }
+        ],
+        "values": [
+          "自由高于一切，任何形式的束缚都不可接受",
+          "力量的形状是持有者内心最深处愿望的投影",
+          "对世界永远保持好奇，永远不会感到无聊",
+          "不该存在于人世的东西应安静地待在原处"
+        ],
+        "speechStyle": "措辞精确而优雅，擅长以温柔的语调掌控对话节奏。常以反问和陈述性的微笑回应威胁。德语流利，偶尔使用俄语。在揭示真相时语速很慢，像在确认每个词是否准确。",
+        "appearance": "暗红色长发曳地，幽蓝色瞳孔，血色红唇与裙裳。系带皮鞋，黑色皮革手套。年近六十二岁却容颜不老，在月光下如哥特教堂彩窗上的图像走出了玻璃。"
+      },
+      "longTermGoals": [
+        {
+          "id": "guard-secret",
+          "description": "守护弗洛伊德托付的核心研究——关于集体意识与现实作用力之间关系的方法论，不让它落入任何单一势力手中",
+          "priority": 10
+        },
+        {
+          "id": "eternal-freedom",
+          "description": "永远鲜艳、永远自由、永不枯萎，跨越时代与值得敬佩的人相遇",
+          "priority": 9
+        },
+        {
+          "id": "observe-and-judge",
+          "description": "以好奇心观察各方势力的真实面目，判断谁值得信任、谁会将力量引向灾难",
+          "priority": 8
+        }
+      ],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "albert",
+        "name": "阿尔伯特·霍利曼",
+        "background": "美国调查局（BOI）特工，代号'秃鹫'。约1882年生于波士顿，出身新英格兰清教徒精英家庭，接受拉丁文、修辞学与古典历史教育。1903年父母死于维也纳的炸弹袭击，此后花八年追查并消灭策划者，由此进入调查局视野。他以绝对的秩序感和职业操守著称，不接受任何'差不多够用'的评估标准——要么有绝对把握，要么继续等待。来维也纳的任务是获取弗洛伊德未公开研究的后半部分。",
+        "personality": [
+          { "trait": "秩序至上", "intensity": 0.95 },
+          { "trait": "冷酷克制", "intensity": 0.9 },
+          { "trait": "精英主义", "intensity": 0.85 },
+          { "trait": "责任感极强", "intensity": 0.9 },
+          { "trait": "偏执完美主义", "intensity": 0.8 }
+        ],
+        "values": [
+          "世界本质上是危险的，正义需要被主动维护",
+          "有能力维护正义的人有道德责任去这样做",
+          "任务高于一切个人情感",
+          "一枚子弹换一个机会，一个机会换一个结果"
+        ],
+        "speechStyle": "语调低沉冷漠，措辞简洁直接，不做多余解释。在压力下会咬字更重。偶尔流露出新英格兰清教传统的措辞习惯。面对莎乐美时会不自觉地被迫说出比预计更多的话。",
+        "appearance": "宽檐礼帽，深色风衣，黑色皮革手套。身材挺拔，帽檐常压低以遮蔽视线。携带柯尔特M1911手枪和战壕刀。四十一岁，面容沉重而锋利。"
+      },
+      "longTermGoals": [
+        {
+          "id": "secure-research",
+          "description": "获取弗洛伊德未公开研究的后半部分，将莎乐美和研究材料带回华盛顿",
+          "priority": 10
+        },
+        {
+          "id": "protect-nikolai",
+          "description": "保护弟弟尼古拉的安全，履行作为兄长的责任",
+          "priority": 8
+        },
+        {
+          "id": "maintain-order",
+          "description": "完成任务，维护美国在情报战中的优势地位",
+          "priority": 7
+        }
+      ],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "nikolai",
+        "name": "尼古拉·霍利曼",
+        "background": "美国调查局特工，代号'鹊鹞'。约1895年生，阿尔伯特的弟弟，小他十三岁。八岁时父母遇害，由阿尔伯特独自抚养。因校内持械事件被退学后全时接受兄长训练。神经认知模式接近高功能自闭谱系——对社交规则的理解是算法式的，对危险信号的处理绕开情绪系统直接进入技术评估。随身绑有15公斤TNT装药，触发机构连接心率。他唯一享受的是'被推到边界上'的感觉。",
+        "personality": [
+          { "trait": "无畏冷血", "intensity": 0.95 },
+          { "trait": "技术狂热", "intensity": 0.9 },
+          { "trait": "漫不经心", "intensity": 0.85 },
+          { "trait": "边界追求者", "intensity": 0.9 },
+          { "trait": "对兄长忠诚", "intensity": 0.8 }
+        ],
+        "values": [
+          "结构是用来打破的，规则是用来在打破之前先吃透的",
+          "去见对手，然后把他们留在原地",
+          "对调查局的忠诚是对阿尔伯特的延伸",
+          "在确认结束之前就开始收尾是习惯性的失误"
+        ],
+        "speechStyle": "语气漫不经心，仿佛在描述与己无关的趣事。喜欢以职业好奇的口吻询问对手的装备型号。话不多但每句都有目的。对讲机代号'鹊鹞'。",
+        "appearance": "年轻高瘦，深色风衣与礼帽，气质与兄长截然相反——轻快而锋利。礼服内衬下绑有炸弹装置，胸针暗藏毒针触发机构。二十八岁。"
+      },
+      "longTermGoals": [
+        {
+          "id": "support-albert",
+          "description": "作为阿尔伯特的外围支援完成任务，排除一切干扰因素",
+          "priority": 9
+        },
+        {
+          "id": "seek-thrill",
+          "description": "在精确性的边界上确认自己仍在准确运作，寻找真正的较量",
+          "priority": 7
+        }
+      ],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "krosov",
+        "name": "克罗索夫",
+        "background": "德米特里·阿列克谢耶维奇·克罗索夫，苏联国家政治保卫总局（OGPU）处长。约1875年生于圣彼得堡旧贵族家庭，近卫骑兵学校优等生。经历日俄战争的结构性溃败后，对任何自我封闭的权力系统保持职业性不信任。1917年革命后被契卡吸收，以化名'克罗内'在维也纳潜伏数月，伪装为波罗的海琥珀商人。他的任务是将莎乐美安全带回莫斯科向列宁当面汇报。1900年前后曾在维也纳与莎乐美有过一面之缘，那次相遇在他记忆中留下的印记远超他愿意承认的程度。",
+        "personality": [
+          { "trait": "沉稳老练", "intensity": 0.95 },
+          { "trait": "战略思维", "intensity": 0.9 },
+          { "trait": "克制深情", "intensity": 0.85 },
+          { "trait": "务实主义", "intensity": 0.9 },
+          { "trait": "职业忠诚", "intensity": 0.8 }
+        ],
+        "values": [
+          "任务优先于个人感受，但不优先于人命",
+          "保护莎乐美的安全优先于获取研究材料",
+          "捕鱼讲究节奏——过早收网只会惊散鱼群",
+          "对任何自我封闭的权力系统保持警惕"
+        ],
+        "speechStyle": "语调平稳从容，以礼节性的措辞掩盖锋芒。擅长以简洁的评论截断对方攻势。在俄语中更显温柔，德语中更显克制。偶尔引用东方谚语。",
+        "appearance": "亚麻色大氅，白色狐毛领。军靴。携带纳甘M1895转轮手枪。约四十八岁，面容坚毅而沉着，侧脸轮廓在月光下格外分明。"
+      },
+      "longTermGoals": [
+        {
+          "id": "escort-salome",
+          "description": "将莎乐美安全带回莫斯科，向列宁当面说明情况并封存秘密",
+          "priority": 10
+        },
+        {
+          "id": "protect-irina",
+          "description": "确保副处长伊丽娜的安全，她是不可替代的搭档",
+          "priority": 8
+        },
+        {
+          "id": "neutralize-threats",
+          "description": "消除其他势力对莎乐美的威胁，确保苏联在情报战中的优势",
+          "priority": 7
+        }
+      ],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "irina",
+        "name": "伊丽娜·瓦西里耶娃",
+        "background": "苏联OGPU副处长，克罗索夫的搭档。1899年生于喀山，父亲是农村学校教员。十三岁偶然接触射击后开始自我训练，十六岁以全俄女子射击赛亚军成绩进入国家训练体系。克罗索夫亲自主持入职考核时风速异常超出预案，她在第一发后调整参数，后十一发成绩更佳。她处理'不够好'的方式不是接受，而是分解然后解决。以演出支援中提琴手身份潜入维也纳，狙击枪藏于琴匣内衬。",
+        "personality": [
+          { "trait": "精确冷静", "intensity": 0.95 },
+          { "trait": "系统性思维", "intensity": 0.9 },
+          { "trait": "执着完善", "intensity": 0.85 },
+          { "trait": "内敛深沉", "intensity": 0.8 },
+          { "trait": "对克罗索夫忠诚", "intensity": 0.9 }
+        ],
+        "values": [
+          "精确是第一美德——散布偏差不可接受",
+          "知道自己的边界，但将接近边界的地方视为需要继续推进的区域",
+          "不擅长谎话，便以精确的真实信息替代",
+          "档案的准确性比单次行动的成功率对长期工作的影响更大"
+        ],
+        "speechStyle": "措辞极简，陈述性语气为主，不附加评论。在技术性评估时最为流畅。对克罗索夫说话时语调会微妙地柔和。醒来后的第一句话永远是对战术的冷静分析。",
+        "appearance": "马尾少女，身材曼妙。背负李-恩菲尔德Mk.III狙击步枪。以中提琴手打扮作掩护。二十四岁，目光锐利而安静。"
+      },
+      "longTermGoals": [
+        {
+          "id": "complete-mission",
+          "description": "以狙击手身份为克罗索夫提供火力掩护，消除对莎乐美的威胁",
+          "priority": 10
+        },
+        {
+          "id": "protect-krosov",
+          "description": "确保克罗索夫的安全——他的判断是她校准自己判断的参照系",
+          "priority": 9
+        },
+        {
+          "id": "improve-skills",
+          "description": "系统性地弥补每次任务中发现的短板，不断接近完美",
+          "priority": 6
+        }
+      ],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "goering",
+        "name": "赫尔曼·戈林",
+        "background": "纳粹党特使，一战王牌飞行员，里希特霍芬联队最后一任指挥官，击坠二十二架。1893年生于罗森海姆，在奥地利贵族埃彭施泰因的城堡中接受中世纪骑士文化熏陶，对荣誉与忠诚有真实认同。1921年结识希特勒，在凡尔赛条约的羞辱中找到了安放骑士价值的新框架。1923年11月啤酒馆暴动中弹，以伤员身份掩护来到维也纳执行真实任务——为希特勒获取朗基努斯之枪的秘密。他的腿伤两个月前已完全痊愈，这是他最大的战术欺骗。",
+        "personality": [
+          { "trait": "骑士信念", "intensity": 0.9 },
+          { "trait": "战术沉着", "intensity": 0.95 },
+          { "trait": "力量与隐忍", "intensity": 0.9 },
+          { "trait": "绝对忠诚", "intensity": 0.85 },
+          { "trait": "认知清醒", "intensity": 0.8 }
+        ],
+        "values": [
+          "在确认结束之前不宣布胜利——这是原则而非技巧",
+          "越晚被发现的那个才是笑到最后的那个",
+          "任务范围之外的事不做",
+          "即使被对手折服也不改变判断"
+        ],
+        "speechStyle": "声音平稳，不带胜利者余韵。措辞简洁，以近乎对等的尊重评价对手。说话节奏有军人的干脆。面对莎乐美时语气中出现罕见的工程师式专注。",
+        "appearance": "高大身形，鸭舌帽压低帽檐，高竖领口的厚呢外套。右腿步态有半拍停顿（实为伪装）。携带毛瑟C96半自动手枪。三十岁，目光沉稳如见过死亡的人。"
+      },
+      "longTermGoals": [
+        {
+          "id": "obtain-spear-secret",
+          "description": "为希特勒获取朗基努斯之枪的秘密——关于集体意识如何成为现实力量的方法论",
+          "priority": 10
+        },
+        {
+          "id": "prove-worthy",
+          "description": "证明自己配得上骑士的荣耀，以最后入场者的身份收割战场",
+          "priority": 8
+        },
+        {
+          "id": "understand-power",
+          "description": "理解莎乐美所展示的力量本质——这不仅是政治革命，而是关于人类意识本身能走到哪里的命题",
+          "priority": 7
+        }
+      ],
+      "shortTermGoals": [],
+      "personaShifts": []
+    }
+  ],
+  "chapters": [
+    {
+      "chapter": "序夜·金色大厅",
+      "events": [
+        {
+          "id": "concert-begins",
+          "time": 480,
+          "name": "金色大厅跨年演奏会",
+          "description": "维也纳爱乐在金色大厅奏响跨年之夜的序曲。全城显贵齐聚，以克雷姆斯河谷白葡萄酒佐酒，在乐声中等候子夜。未能入场者聚在卡尔斯广场的石板路上，以呵出的白雾权充指挥家的手势。",
+          "location": "golden-hall",
+          "severity": "minor"
+        },
+        {
+          "id": "salome-spotted",
+          "time": 540,
+          "name": "莎乐美现身演奏会",
+          "description": "莎乐美公然出席金色大厅的跨年演奏会——这是她整个计划的第一步：主动暴露行踪，将所有势力引入她预先设计好的场域。各方特工确认目标出席。",
+          "location": "golden-hall",
+          "affectedCharacters": ["salome", "albert", "krosov", "goering"],
+          "severity": "major"
+        },
+        {
+          "id": "salome-exits",
+          "time": 600,
+          "name": "莎乐美遁入巷道",
+          "description": "莎乐美离开金色大厅，翩然奔入夜色中的巷道。暗红长发与曳地裙摆在急行气流中鼓起，像一朵正在剧烈思考的罂粟。她不是在逃跑，而是在引导——将追踪者引入她选定的场域。",
+          "location": "alley",
+          "affectedCharacters": ["salome", "albert"],
+          "severity": "major"
+        },
+        {
+          "id": "albert-intercepts",
+          "time": 660,
+          "name": "阿尔伯特截获莎乐美",
+          "description": "阿尔伯特在巷道转角处以战壕刀抵住莎乐美的颈间，要求她交出弗洛伊德未公开的研究材料。然而莎乐美以绝对的从容回应威胁，反客为主——她知道自己是唯一的钥匙，任何想开门的人都不能毁掉她。",
+          "location": "alley",
+          "affectedCharacters": ["salome", "albert"],
+          "severity": "critical"
+        },
+        {
+          "id": "krosov-arrives",
+          "time": 720,
+          "name": "克罗索夫现身·三方对峙",
+          "description": "克罗索夫以纳甘M1895枪口对准阿尔伯特现身。三者之间形成力学链条：阿尔伯特的匕首抵着莎乐美，莎乐美的身影遮住狙击角度，克罗索夫的枪口锁定阿尔伯特。任何一方的动作都会破坏平衡。伊丽娜在远处楼顶就位，瞄准镜锁定目标。",
+          "location": "alley",
+          "affectedCharacters": ["salome", "albert", "krosov", "irina"],
+          "severity": "critical"
+        }
+      ],
+      "locations": [
+        { "id": "golden-hall", "name": "金色大厅" },
+        { "id": "karlsplatz", "name": "卡尔斯广场" },
+        { "id": "alley", "name": "巷道" },
+        { "id": "rooftop", "name": "民宅楼顶" },
+        { "id": "building-interior", "name": "民宅内部" },
+        { "id": "riverbank", "name": "多瑙河河堤" },
+        { "id": "hofburg", "name": "霍夫堡博物馆" }
+      ]
+    },
+    {
+      "chapter": "血夜·圆舞曲",
+      "events": [
+        {
+          "id": "flash-bombs",
+          "time": 780,
+          "name": "照明弹破局",
+          "description": "尼古拉引爆预置的镁粉照明弹——强光、冲击波与烟雾在三秒内令人失去方向感。克罗索夫本能地将莎乐美揽入怀中；阿尔伯特当机立断放弃人质横向翻滚躲入掩体。伊丽娜的狙击子弹擦着阿尔伯特鞋跟砸入石板。僵局被打破，但阿尔伯特失去了对莎乐美的控制。",
+          "location": "alley",
+          "affectedCharacters": ["salome", "albert", "krosov", "nikolai", "irina"],
+          "severity": "critical"
+        },
+        {
+          "id": "nikolai-vs-goering",
+          "time": 840,
+          "name": "尼古拉与戈林交锋",
+          "description": "尼古拉上楼追踪狙击手伊丽娜时，被一直隐藏的第四方势力——戈林——从背后以毛瑟C96截住。两人在民宅内展开近身搏斗。尼古拉以速度和距离控制占据优势，将戈林击倒。然而戈林的腿伤两个月前已痊愈——这是最致命的情报欺骗。戈林以完整发力将尼古拉从窗口送出。",
+          "location": "building-interior",
+          "affectedCharacters": ["nikolai", "goering"],
+          "severity": "critical"
+        },
+        {
+          "id": "riverbank-firefight",
+          "time": 900,
+          "name": "河岸交火",
+          "description": "克罗索夫带莎乐美向多瑙河河堤方向撤退，阿尔伯特紧追不舍。双方在移动中持续对射将近十分钟，最终双方几乎弹药告罄——阿尔伯特仅剩最后一颗子弹，克罗索夫的纳甘已空仓。三人在河堤上达成暂时的僵持。",
+          "location": "riverbank",
+          "affectedCharacters": ["salome", "albert", "krosov"],
+          "severity": "major"
+        },
+        {
+          "id": "secret-revealed",
+          "time": 960,
+          "name": "朗基努斯之枪的秘密",
+          "description": "莎乐美在河堤上揭示了她所守护的秘密：朗基努斯之枪作为实体并不重要，重要的是它在数百万人精神结构中积累的概念质量。弗洛伊德的研究揭示了集体意识如何以足够的密度对现实产生非隐喻层面的作用力。这才是各方势力真正追寻的东西。",
+          "location": "riverbank",
+          "affectedCharacters": ["salome", "albert", "krosov"],
+          "severity": "critical"
+        },
+        {
+          "id": "albert-last-bullet",
+          "time": 1020,
+          "name": "最后一颗子弹",
+          "description": "阿尔伯特用最后一颗子弹射向莎乐美——这是精心算计的一击：他赌克罗索夫会本能地用身体挡住子弹而非闪避。克罗索夫果然以右肩替莎乐美挡枪，子弹被防弹背心减速后嵌入肋骨附近。莎乐美趁机向闹市区逃去。然而伊丽娜从远处高处一枪贯穿了追击中的阿尔伯特的头颅。",
+          "location": "riverbank",
+          "affectedCharacters": ["salome", "albert", "krosov", "irina"],
+          "severity": "critical"
+        }
+      ],
+      "locations": [
+        { "id": "golden-hall", "name": "金色大厅" },
+        { "id": "karlsplatz", "name": "卡尔斯广场" },
+        { "id": "alley", "name": "巷道" },
+        { "id": "rooftop", "name": "民宅楼顶" },
+        { "id": "building-interior", "name": "民宅内部" },
+        { "id": "riverbank", "name": "多瑙河河堤" },
+        { "id": "hofburg", "name": "霍夫堡博物馆" }
+      ]
+    },
+    {
+      "chapter": "终夜·多瑙河畔",
+      "events": [
+        {
+          "id": "goering-appears",
+          "time": 1080,
+          "name": "戈林携伊丽娜现身",
+          "description": "戈林从黑暗中走出，左臂夹着伊丽娜的步枪，右手搀着昏迷的伊丽娜。他将伊丽娜放在克罗索夫身侧后，面向莎乐美——作为今夜最后入场的第四方势力，他代表希特勒提出合作请求。",
+          "location": "riverbank",
+          "affectedCharacters": ["salome", "krosov", "irina", "goering"],
+          "severity": "critical"
+        },
+        {
+          "id": "salome-refuses",
+          "time": 1110,
+          "name": "莎乐美拒绝合作",
+          "description": "莎乐美拒绝与纳粹合作：'通向王道的路不止一条，而你们选择的是所有路径中最不祥的一条。'她随即向戈林发出挑战——在钟声敲响前的最后一场对决，若他能战胜她，便将秘密连同自身无偿交予。",
+          "location": "riverbank",
+          "affectedCharacters": ["salome", "goering"],
+          "severity": "critical"
+        },
+        {
+          "id": "salome-power-revealed",
+          "time": 1140,
+          "name": "分裂者之力显现",
+          "description": "莎乐美的瞳孔由幽蓝转为深红，空间的折射率产生偏移。她展现出分裂者的力量：闪烁移动（身体化为红雾再重组）、强制终止动能（子弹在她面前失去速度坠落）。戈林的全部战场经验在这一刻失去了意义——她能做到这一切，仅仅是因为她想做到。",
+          "location": "riverbank",
+          "affectedCharacters": ["salome", "goering"],
+          "severity": "critical"
+        },
+        {
+          "id": "spear-fragment-given",
+          "time": 1170,
+          "name": "枪片残片与忠告",
+          "description": "莎乐美以朗基努斯之枪的三个残片之一刺入戈林大腿——不是伤害，而是传递。她留下忠告：'如果你认为自己无法比过去的神做得更好，就不要去做那个位置上的事。'她好奇这些人各自能召唤出怎样的'本我'。",
+          "location": "riverbank",
+          "affectedCharacters": ["salome", "goering"],
+          "severity": "critical"
+        },
+        {
+          "id": "midnight-bells",
+          "time": 1200,
+          "name": "子夜钟声",
+          "description": "钟楼的钟声从城市中心出发，沉重而均匀地向四周扩散。1923年结束，1924年开始。多瑙河的水面在夜风中颤动，将散碎的月光推来推去。《蓝色多瑙河》的旋律在空气中飘荡。莎乐美消失在夜色中——关于她的故事，才刚刚开始。",
+          "location": "riverbank",
+          "affectedCharacters": ["salome", "krosov", "goering"],
+          "severity": "major"
+        }
+      ],
+      "locations": [
+        { "id": "golden-hall", "name": "金色大厅" },
+        { "id": "karlsplatz", "name": "卡尔斯广场" },
+        { "id": "alley", "name": "巷道" },
+        { "id": "rooftop", "name": "民宅楼顶" },
+        { "id": "building-interior", "name": "民宅内部" },
+        { "id": "riverbank", "name": "多瑙河河堤" },
+        { "id": "hofburg", "name": "霍夫堡博物馆" }
+      ]
+    }
+  ],
+  "goapActions": [
+    {
+      "id": "go-to",
+      "name": "前往目的地",
+      "preconditions": {},
+      "effects": { "atDestination": true },
+      "cost": 1,
+      "timeCost": 15,
+      "description": "在维也纳的夜色中穿行，前往指定地点"
+    },
+    {
+      "id": "observe",
+      "name": "侦察观察",
+      "preconditions": { "atDestination": true },
+      "effects": { "hasIntelligence": true },
+      "cost": 2,
+      "timeCost": 30,
+      "description": "隐蔽观察目标的行动轨迹与周围环境，收集情报"
+    },
+    {
+      "id": "confront",
+      "name": "正面对峙",
+      "preconditions": { "atDestination": true },
+      "effects": { "hasConfrontation": true },
+      "cost": 3,
+      "timeCost": 20,
+      "description": "以武力或语言直接面对目标，迫使其做出回应"
+    },
+    {
+      "id": "negotiate",
+      "name": "谈判交涉",
+      "preconditions": { "atDestination": true },
+      "effects": { "hasDialogue": true },
+      "cost": 2,
+      "timeCost": 30,
+      "description": "与对方进行谈判，试图达成某种协议或获取信息"
+    },
+    {
+      "id": "snipe",
+      "name": "狙击射击",
+      "preconditions": { "atDestination": true, "hasIntelligence": true },
+      "effects": { "targetNeutralized": true },
+      "cost": 4,
+      "timeCost": 5,
+      "description": "从隐蔽的高处位置以狙击步枪精确射击目标"
+    },
+    {
+      "id": "close-combat",
+      "name": "近身格斗",
+      "preconditions": { "atDestination": true },
+      "effects": { "targetSubdued": true },
+      "cost": 3,
+      "timeCost": 10,
+      "description": "与对手展开近身搏斗，以速度、力量或技巧取胜"
+    },
+    {
+      "id": "ambush",
+      "name": "伏击截获",
+      "preconditions": { "atDestination": true, "hasIntelligence": true },
+      "effects": { "targetCaptured": true },
+      "cost": 3,
+      "timeCost": 15,
+      "description": "在预设地点埋伏，等待目标进入陷阱后突然行动"
+    },
+    {
+      "id": "distract",
+      "name": "制造干扰",
+      "preconditions": { "atDestination": true },
+      "effects": { "targetDistracted": true },
+      "cost": 2,
+      "timeCost": 5,
+      "description": "使用照明弹、爆炸物或其他手段打断对手的部署"
+    },
+    {
+      "id": "flee",
+      "name": "撤退逃脱",
+      "preconditions": {},
+      "effects": { "isSafe": true, "atDestination": false },
+      "cost": 2,
+      "timeCost": 10,
+      "description": "迅速脱离当前危险区域，沿预设路线撤退"
+    },
+    {
+      "id": "protect",
+      "name": "掩护保护",
+      "preconditions": { "atDestination": true },
+      "effects": { "targetProtected": true },
+      "cost": 2,
+      "timeCost": 10,
+      "description": "以自身位置或火力为同伴或目标提供掩护"
+    },
+    {
+      "id": "communicate",
+      "name": "无线电联络",
+      "preconditions": {},
+      "effects": { "hasCoordination": true },
+      "cost": 1,
+      "timeCost": 5,
+      "description": "通过无线电或秘密信号与同伴进行战术协调"
+    },
+    {
+      "id": "reveal-secret",
+      "name": "揭示秘密",
+      "preconditions": { "hasDialogue": true },
+      "effects": { "secretRevealed": true },
+      "cost": 4,
+      "timeCost": 30,
+      "description": "在谈判或对峙中主动揭露关键信息，改变在场者的认知与判断"
+    }
+  ]
+}
