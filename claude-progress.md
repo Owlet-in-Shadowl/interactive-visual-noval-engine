@@ -155,3 +155,10 @@
 - Debug 面板：preset phase + 状态图节点
 - scarlet-danube 3个关键事件添加 PF frames 数据
 - 所有步骤 tsc --noEmit 零错误
+
+### Session 13 (commit 631ac4c)
+- 状态机图重构：单列 → 双列布局，AI 管线（左 x=75）+ 预置管线（右 x=265）并排展示
+- core-loop-graph.ts 全面重写：新增 preset_render/preset_wait/preset_mem/ce_preset/ce_preset_at 节点
+- StateMachineDiagram.tsx 更新：新增 BookOpen/Hand/Layers 图标，重写 edgePath() 处理双列边路径
+- 共享 idle 节点居中（x=170），侧分支（waiting_input, goap_gen, error, reflection）居中
+- SVG 尺寸 340×420，tsc 零错误
