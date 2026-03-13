@@ -88,6 +88,7 @@ export interface IContextEngine {
   compact(params: { sessionId: string; sessionFile: string; tokenBudget?: number; force?: boolean; currentTokenCount?: number; compactionTarget?: 'budget' | 'threshold'; customInstructions?: string; runtimeContext?: ContextEngineRuntimeContext }): Promise<CompactResult>;
   afterTurn?(params: { sessionId: string; sessionFile: string; messages: AgentMessage[]; prePromptMessageCount: number; autoCompactionSummary?: string; isHeartbeat?: boolean; tokenBudget?: number; runtimeContext?: ContextEngineRuntimeContext }): Promise<void>;
   getRecentMemories?(sessionId: string, count: number): EpisodicMemory[];
+  recallMemories?(sessionId: string, query: string, topK?: number): EpisodicMemory[];
   prepareSubagentSpawn?(params: { parentSessionKey: string; childSessionKey: string; ttlMs?: number }): Promise<SubagentSpawnPreparation | undefined>;
   onSubagentEnded?(params: { childSessionKey: string; reason: SubagentEndReason }): Promise<void>;
   dispose?(): Promise<void>;
@@ -382,6 +383,10 @@ export class NovelContextEngine implements IFullContextEngine {
   getRecentMemories(sessionId: string, count: number): EpisodicMemory[] {
     const all = this.episodicStore.getAll(sessionId);
     return all.slice(-count);
+  }
+
+  recallMemories(sessionId: string, query: string, topK: number = 10): EpisodicMemory[] {
+    return this.episodicStore.recall(sessionId, query, topK);
   }
 
   // ─── Public helpers ────────────────────────────────────

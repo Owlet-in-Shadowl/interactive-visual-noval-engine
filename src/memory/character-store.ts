@@ -11,6 +11,7 @@ import type {
 interface CharacterMemoryStore {
   characters: Record<string, CharacterState>;
 
+  resetAll(): void;
   initCharacter(id: string, state: CharacterState): void;
   getPersona(id: string): CorePersona | undefined;
   getGoals(id: string): { longTerm: LongTermGoal[]; shortTerm: ShortTermGoal[] };
@@ -27,6 +28,10 @@ interface CharacterMemoryStore {
 
 export const useCharacterStore = create<CharacterMemoryStore>()((set, get) => ({
   characters: {},
+
+  resetAll() {
+    set({ characters: {} });
+  },
 
   initCharacter(id, state) {
     set((s) => ({

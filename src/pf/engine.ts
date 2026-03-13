@@ -30,6 +30,7 @@ export function framesToScenes(
       dialogue: f.content.text,
       narration: f.content.stage,
       emotion: f.content.emotion,
+      type: f.content.type === 'thought' ? 'thought' as const : 'dialogue' as const,
     }));
 }
 

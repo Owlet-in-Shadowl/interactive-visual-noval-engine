@@ -90,12 +90,16 @@ export const GOAPActionSchema = z.object({
 
 // ─── 叙事输出 Schema ─────────────────────────────────────
 
+export const SceneTypeSchema = z.enum(['dialogue', 'narration', 'thought']).default('dialogue')
+  .describe('场景类型：dialogue=对话/旁白, narration=纯叙事, thought=内心独白');
+
 export const SceneOutputSchema = z.object({
   speaker: z.string().nullable().describe('说话角色ID，null表示旁白'),
   dialogue: z.string().nullable().default('').transform((v) => v ?? '').describe('对话或旁白文本'),
   emotion: z.string().optional().describe('角色情绪标签'),
   narration: z.string().optional().describe('环境描写/动作描述'),
   bgEffect: z.string().optional().describe('背景特效指令'),
+  type: SceneTypeSchema,
 });
 
 // ─── 情节记忆 Schema ─────────────────────────────────────
