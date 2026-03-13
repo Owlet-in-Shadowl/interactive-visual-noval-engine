@@ -47,8 +47,11 @@ src/
   goap/           # Goal-Oriented Action Planning (planner.ts)
   memory/         # Context engine + character memory (context-engine.ts, character-store.ts)
   player/         # Player UI (ChatInput, CharacterPanel, player-store)
+  editor/         # Script editor (ScriptEditor, EditorTree, EditorPanel, FrameEditor, EventEditor, ChapterEditor, editor-store)
   settings/       # Settings UI (SettingsScreen, ScriptGenerator, ScriptUpload, ScriptList, ModelConfig)
   storage/        # IndexedDB persistence (idb-storage.ts, storage-interface.ts, seed.ts)
+  components/ui/  # shadcn/ui components (button, input, textarea, select, scroll-area, etc.)
+  lib/            # Utility functions (utils.ts — cn() helper)
   timeline/       # Event timeline system (timeline.ts)
   data/           # Static data (characters JSON, world-events JSON, goap-actions JSON, scripts/)
   theme.ts        # Design tokens (T.xxx)
@@ -58,14 +61,13 @@ src/
 
 ## Tech Stack & Conventions
 
-- **Framework**: React 18 + TypeScript + Vite
-- **Styling**: Inline styles only (`React.CSSProperties`), using theme tokens from `src/theme.ts` (e.g. `T.bg`, `T.accent`, `T.bgElevated`)
-- **State**: Zustand stores (debug-store, player-store, settings-store, character-store, model-config-store)
+- **Framework**: React 19 + TypeScript 5.7 + Vite 6
+- **UI Components**: shadcn/ui + Tailwind CSS v4 (new components), inline styles (legacy components — gradual migration)
+- **Styling**: New code uses Tailwind classes + shadcn components. Legacy code uses inline `React.CSSProperties` with `T.*` tokens from `src/theme.ts`. CSS variables in `src/app.css` map to the same dark theme.
+- **State**: Zustand stores (debug-store, player-store, settings-store, character-store, model-config-store, editor-store)
 - **Icons**: Lucide React (tree-shakeable, ~1KB/icon) — NO emoji or character art in UI
 - **Storage**: IndexedDB via `IDBScriptStorage` (storage-interface.ts defines `ScriptBundle` type)
 - **AI**: Multi-agent architecture (cognition → goap → director → render), supports DeepSeek / OpenAI-compatible APIs
-- **No CSS files**: No Tailwind, no CSS modules, no styled-components. Everything is inline styles.
-- **No shadcn/ui**: Pure CSS for all UI components (toggle switches, buttons, etc.)
 
 ## Build & Test
 

@@ -14,6 +14,7 @@ import { BookOpen, Upload, Sparkles, Wrench, ArrowLeft } from 'lucide-react';
 interface SettingsScreenProps {
   onBack: () => void;
   onStartGame: () => void;
+  onEditScript?: (scriptId: string) => void;
 }
 
 const tabIcons: Record<SettingsTab, React.ReactNode> = {
@@ -30,7 +31,7 @@ const tabs: { key: SettingsTab; label: string }[] = [
   { key: 'model', label: '模型配置' },
 ];
 
-export function SettingsScreen({ onBack, onStartGame }: SettingsScreenProps) {
+export function SettingsScreen({ onBack, onStartGame, onEditScript }: SettingsScreenProps) {
   const currentTab = useSettingsStore((s) => s.currentTab);
   const setTab = useSettingsStore((s) => s.setTab);
   const error = useSettingsStore((s) => s.error);
@@ -72,7 +73,7 @@ export function SettingsScreen({ onBack, onStartGame }: SettingsScreenProps) {
       {/* Content */}
       <div style={styles.content}>
         {currentTab === 'select' && (
-          <ScriptList onStartGame={onStartGame} />
+          <ScriptList onStartGame={onStartGame} onEditScript={onEditScript} />
         )}
         {currentTab === 'upload' && <ScriptUpload />}
         {currentTab === 'generate' && <ScriptGenerator />}

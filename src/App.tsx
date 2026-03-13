@@ -19,13 +19,15 @@ import { useSettingsStore } from './settings/settings-store';
 import { useModelConfigStore } from './settings/model-config-store';
 import { Timeline } from './timeline/timeline';
 import type { SceneOutput, WorldEvent, GOAPAction } from './memory/schemas';
+import { ScriptEditor } from './editor/ScriptEditor';
 import { T } from './theme';
 import { Settings, Play, Pause, Square, RefreshCw, Hand } from 'lucide-react';
 
-type AppView = 'start' | 'settings' | 'game';
+type AppView = 'start' | 'settings' | 'game' | 'editor';
 
 export function App() {
   const [view, setView] = useState<AppView>('start');
+  const [editingScriptId, setEditingScriptId] = useState<string | null>(null);
   const [scenes, setScenes] = useState<SceneOutput[]>([]);
   const [activeCharId, setActiveCharId] = useState('');
   const [activeGoapActions, setActiveGoapActions] = useState<GOAPAction[]>([]);
@@ -190,6 +192,14 @@ export function App() {
           <SettingsScreen
             onBack={() => setView('start')}
             onStartGame={handleStart}
+            onEditScript={(id) => { setEditingScriptId(id); setView('editor'); }}
+          />
+        )}
+
+        {view === 'editor' && editingScriptId && (
+          <ScriptEditor
+            scriptId={editingScriptId}
+            onClose={() => { setEditingScriptId(null); setView('settings'); }}
           />
         )}
 

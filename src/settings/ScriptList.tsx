@@ -8,10 +8,11 @@ import { useSettingsStore } from './settings-store';
 import { BUILTIN_SCRIPT_ID } from '../storage/seed';
 import type { ScriptMetadata } from '../storage/storage-interface';
 import { T } from '../theme';
-import { Play, Trash2, Download } from 'lucide-react';
+import { Play, Trash2, Download, Pencil } from 'lucide-react';
 
 interface ScriptListProps {
   onStartGame: () => void;
+  onEditScript?: (scriptId: string) => void;
 }
 
 const sourceBadges: Record<string, { label: string; color: string }> = {
@@ -20,7 +21,7 @@ const sourceBadges: Record<string, { label: string; color: string }> = {
   generated: { label: '生成', color: T.gold },
 };
 
-export function ScriptList({ onStartGame }: ScriptListProps) {
+export function ScriptList({ onStartGame, onEditScript }: ScriptListProps) {
   const scripts = useSettingsStore((s) => s.scripts);
   const activeScriptId = useSettingsStore((s) => s.activeScriptId);
   const activeScript = useSettingsStore((s) => s.activeScript);
@@ -64,6 +65,7 @@ export function ScriptList({ onStartGame }: ScriptListProps) {
               isSelected={script.id === activeScriptId}
               onSelect={() => selectScript(script.id)}
               onDownload={() => handleDownload(script.id, script.name)}
+              onEdit={onEditScript ? () => onEditScript(script.id) : undefined}
               onDelete={
                 script.id !== BUILTIN_SCRIPT_ID
                   ? () => handleDelete(script.id)
@@ -102,6 +104,7 @@ function ScriptCard({
   isSelected,
   onSelect,
   onDownload,
+  onEdit,
   onDelete,
   isConfirmingDelete,
 }: {
@@ -109,6 +112,7 @@ function ScriptCard({
   isSelected: boolean;
   onSelect: () => void;
   onDownload: () => void;
+  onEdit?: () => void;
   onDelete?: () => void;
   isConfirmingDelete: boolean;
 }) {
@@ -145,6 +149,18 @@ function ScriptCard({
             : '默认'}
         </span>
         <div style={styles.cardActions}>
+          {onEdit && (
+            <button
+              style={styles.actionBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              title="编辑"
+            >
+              <Pencil size={12} />
+            </button>
+          )}
           <button
             style={styles.actionBtn}
             onClick={(e) => {
