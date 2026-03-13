@@ -52,11 +52,8 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       const { storage } = get();
       await storage.init();
 
-      // Seed builtin script if not present
-      const hasBuiltin = await storage.hasScript(BUILTIN_SCRIPT_ID);
-      if (!hasBuiltin) {
-        await storage.saveScript(createBuiltinScript());
-      }
+      // Always re-seed builtin script to keep it up-to-date
+      await storage.saveScript(createBuiltinScript());
 
       set({ initialized: true });
       await get().refreshScripts();
