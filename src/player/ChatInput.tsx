@@ -1,18 +1,15 @@
 /**
- * ChatInput - LLM-style chat input component for player interaction.
+ * ChatInput — 游戏底栏输入组件
  *
- * Features:
- * - Text input + Send button (Enter to submit)
- * - Mode toggle: autonomous / intervention
- * - Auto-pause checkbox: pause after GOAP task completion
- * - Scrollable chat history showing player, narrator, character messages
+ * 新交互模型：
+ * - AUTO 按钮：开启/关闭自动推进
+ * - 输入框：玩家输入触发角色内心思考（「俺寻思」）
+ * - 发送按钮：提交思考请求
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { usePlayerStore } from './player-store';
-import type { ChatMessage } from './player-store';
-import { T } from '../theme';
-import { RefreshCw, Hand } from 'lucide-react';
+import { Play, Pause, Send, Loader2 } from 'lucide-react';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -21,27 +18,17 @@ interface ChatInputProps {
 
 export function ChatInput({ onSendMessage, isRunning }: ChatInputProps) {
   const [inputValue, setInputValue] = useState('');
-  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const mode = usePlayerStore((s) => s.mode);
-  const autoPause = usePlayerStore((s) => s.autoPauseOnTaskDone);
-  const dynamicGoap = usePlayerStore((s) => s.dynamicGoapEnabled);
-  const chatHistory = usePlayerStore((s) => s.chatHistory);
-  const setMode = usePlayerStore((s) => s.setMode);
-  const toggleAutoPause = usePlayerStore((s) => s.toggleAutoPause);
-  const toggleDynamicGoap = usePlayerStore((s) => s.toggleDynamicGoap);
-
-  // Auto-scroll to bottom on new messages
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatHistory.length]);
+  const autoAdvance = usePlayerStore((s) => s.autoAdvance);
+  const thinking = usePlayerStore((s) => s.thinking);
+  const toggleAutoAdvance = usePlayerStore((s) => s.toggleAutoAdvance);
 
   const handleSubmit = useCallback(() => {
     const trimmed = inputValue.trim();
-    if (!trimmed) return;
+    if (!trimmed || thinking) return;
     onSendMessage(trimmed);
     setInputValue('');
-  }, [inputValue, onSendMessage]);
+  }, [inputValue, onSendMessage, thinking]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -54,259 +41,71 @@ export function ChatInput({ onSendMessage, isRunning }: ChatInputProps) {
   );
 
   return (
-    <div style={styles.container}>
-      {/* Chat history */}
-      {chatHistory.length > 0 && (
-        <div style={styles.chatHistory}>
-          {chatHistory.slice(-30).map((msg) => (
-            <ChatBubble key={msg.id} message={msg} />
-          ))}
-          <div ref={chatEndRef} />
-        </div>
-      )}
-
-      {/* Input area */}
-      <div style={styles.inputRow}>
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            !isRunning
-              ? '点击"开始游戏"后可以输入...'
-              : mode === 'intervention'
-                ? '输入指令或对话，影响角色决策...'
-                : '切换到介入模式后可输入（当前自主运行中）'
+    <div className="flex items-center gap-2 px-3 py-2 border-t border-border bg-background">
+      {/* AUTO toggle */}
+      <button
+        onClick={toggleAutoAdvance}
+        disabled={!isRunning}
+        className={`
+          flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium
+          transition-colors shrink-0
+          ${autoAdvance
+            ? 'bg-primary/20 text-primary border border-primary/30'
+            : 'bg-muted text-muted-foreground border border-transparent hover:bg-muted/80'
           }
-          disabled={!isRunning}
-          style={{
-            ...styles.input,
-            opacity: isRunning ? 1 : 0.5,
-          }}
-        />
-        <button
-          onClick={handleSubmit}
-          disabled={!isRunning || !inputValue.trim()}
-          style={{
-            ...styles.sendBtn,
-            opacity: isRunning && inputValue.trim() ? 1 : 0.4,
-          }}
-        >
-          发送
-        </button>
-      </div>
-
-      {/* Controls row */}
-      {isRunning && (
-        <div style={styles.controlsRow}>
-          <div style={styles.modeGroup}>
-            <button
-              style={{
-                ...styles.modeBtn,
-                ...(mode === 'autonomous' ? styles.modeBtnActive : {}),
-              }}
-              onClick={() => setMode('autonomous')}
-            >
-              <RefreshCw size={11} strokeWidth={1.5} /> 自主运行
-            </button>
-            <button
-              style={{
-                ...styles.modeBtn,
-                ...(mode === 'intervention' ? styles.modeBtnIntervention : {}),
-              }}
-              onClick={() => setMode('intervention')}
-            >
-              <Hand size={11} strokeWidth={1.5} /> 介入模式
-            </button>
-          </div>
-
-          <ToggleSwitch
-            checked={autoPause}
-            onChange={toggleAutoPause}
-            label="世界事件结束后等待介入"
-          />
-          <ToggleSwitch
-            checked={dynamicGoap}
-            onChange={toggleDynamicGoap}
-            label="允许根据角色行动习得新动作"
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── ToggleSwitch sub-component ─────────────────────────
-
-function ToggleSwitch({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  label: string;
-}) {
-  return (
-    <div style={toggleStyles.container} onClick={onChange}>
-      <span style={toggleStyles.label}>{label}</span>
-      <div
-        style={{
-          ...toggleStyles.track,
-          background: checked ? T.accent : T.bgElevated,
-        }}
+          ${!isRunning ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+        `}
       >
-        <div
-          style={{
-            ...toggleStyles.thumb,
-            transform: checked ? 'translateX(14px)' : 'translateX(0)',
-          }}
-        />
-      </div>
+        {autoAdvance
+          ? <><Pause size={12} strokeWidth={2} /> AUTO</>
+          : <><Play size={12} strokeWidth={2} /> AUTO</>
+        }
+      </button>
+
+      {/* Input field */}
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={
+          thinking
+            ? '思考中…'
+            : !isRunning
+              ? '等待游戏开始…'
+              : '想确认什么？可以在这里思考…'
+        }
+        disabled={!isRunning || thinking}
+        className={`
+          flex-1 px-3 py-1.5 rounded-md text-sm
+          bg-muted border border-border
+          text-foreground placeholder:text-muted-foreground
+          outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20
+          transition-colors
+          ${(!isRunning || thinking) ? 'opacity-50 cursor-not-allowed' : ''}
+        `}
+      />
+
+      {/* Send / Loading button */}
+      <button
+        onClick={handleSubmit}
+        disabled={!isRunning || !inputValue.trim() || thinking}
+        className={`
+          flex items-center justify-center w-8 h-8 rounded-md shrink-0
+          transition-colors
+          ${thinking
+            ? 'bg-muted text-muted-foreground cursor-not-allowed'
+            : isRunning && inputValue.trim()
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'
+              : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
+          }
+        `}
+      >
+        {thinking
+          ? <Loader2 size={14} className="animate-spin" />
+          : <Send size={14} />
+        }
+      </button>
     </div>
   );
 }
-
-const toggleStyles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    cursor: 'pointer',
-  },
-  label: {
-    color: T.textTertiary,
-    fontSize: '11px',
-    fontFamily: T.fontSans,
-  },
-  track: {
-    width: '30px',
-    height: '16px',
-    borderRadius: '8px',
-    padding: '2px',
-    transition: 'background 0.2s',
-    flexShrink: 0,
-  },
-  thumb: {
-    width: '12px',
-    height: '12px',
-    borderRadius: '50%',
-    background: 'white',
-    transition: 'transform 0.2s',
-  },
-};
-
-// ─── ChatBubble sub-component ──────────────────────────
-
-function ChatBubble({ message }: { message: ChatMessage }) {
-  const roleStyles: Record<string, React.CSSProperties> = {
-    player: { color: T.accent, fontWeight: 500 },
-    narrator: { color: T.narration, fontStyle: 'italic' },
-    character: { color: T.gold },
-    system: { color: T.textMuted, fontSize: '11px' },
-  };
-
-  const roleLabels: Record<string, string> = {
-    player: '你',
-    narrator: '',
-    character: '',
-    system: '',
-  };
-
-  const label = roleLabels[message.role];
-
-  return (
-    <div style={styles.bubble}>
-      {label && <span style={roleStyles[message.role]}>{label}：</span>}
-      <span style={roleStyles[message.role] || {}}>
-        {message.content}
-      </span>
-    </div>
-  );
-}
-
-// ─── Styles ────────────────────────────────────────────
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    background: T.bg,
-    borderTop: `1px solid ${T.border}`,
-    padding: '0',
-  },
-  chatHistory: {
-    maxHeight: '120px',
-    overflowY: 'auto',
-    padding: '8px 12px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-  },
-  bubble: {
-    fontSize: '12px',
-    lineHeight: '1.5',
-    wordBreak: 'break-word' as const,
-  },
-  inputRow: {
-    display: 'flex',
-    gap: '6px',
-    padding: '8px 12px',
-  },
-  input: {
-    flex: 1,
-    padding: '8px 14px',
-    background: T.bgSurface,
-    borderWidth: '1px',
-    borderStyle: 'solid',
-    borderColor: T.border,
-    borderRadius: T.radiusLg,
-    color: T.textPrimary,
-    fontSize: '13px',
-    outline: 'none',
-    fontFamily: T.fontSans,
-  },
-  sendBtn: {
-    padding: '8px 16px',
-    background: T.accent,
-    borderWidth: '0',
-    borderStyle: 'none',
-    borderRadius: T.radius,
-    color: 'white',
-    fontSize: '13px',
-    cursor: 'pointer',
-    fontFamily: T.fontSans,
-    whiteSpace: 'nowrap' as const,
-  },
-  controlsRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '4px 12px 8px',
-    gap: '8px',
-  },
-  modeGroup: {
-    display: 'flex',
-    gap: '4px',
-  },
-  modeBtn: {
-    padding: '3px 10px',
-    background: T.bgSurface,
-    border: 'none',
-    borderRadius: T.radius,
-    color: T.textPrimary,
-    fontSize: '11px',
-    cursor: 'pointer',
-    fontFamily: T.fontSans,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-  },
-  modeBtnActive: {
-    background: T.bgActive,
-  },
-  modeBtnIntervention: {
-    background: T.bgActive,
-  },
-};

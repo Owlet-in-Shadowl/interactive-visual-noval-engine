@@ -18,7 +18,7 @@ export function createBuiltinScript(): ScriptBundle {
   return {
     metadata: {
       id: BUILTIN_SCRIPT_ID,
-      name: '第一章：风起',
+      name: '风起（内置示例）',
       description: '莉娅·艾文斯 — 没落贵族的末裔，在边境小镇追寻家族覆灭的真相',
       author: '内置剧本',
       createdAt: 0,

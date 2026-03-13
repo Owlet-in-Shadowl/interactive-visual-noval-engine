@@ -34,19 +34,26 @@
 | 26 | 渲染器点击推进（替代自动推进） | done | commit 27b618b |
 | 27 | Debug 面板 preset 节点 | done | commit e521ed1 |
 | 28 | scarlet-danube 预置场景数据（3事件 PF frames） | done | commit dc1c5fb |
+| 29 | shadcn/ui + Tailwind CSS v4 引入 | done | 编辑器作为首个 shadcn 组件 |
+| 30 | 剧本编辑器（VS Code 风格大纲树 + 侧面板） | done | 全功能 CRUD |
+| 31 | SceneOutput type 字段（dialogue/narration/thought） | done | 向后兼容 |
+| 32 | 「俺寻思」系统 — 思考 Agent + 内心独白渲染 | done | agents/thinking.ts |
+| 33 | 底栏重写（AUTO + 输入框，替代自主/介入模式） | done | ChatInput Tailwind 重写 |
+| 34 | GameRenderer AUTO 模式 + thought 样式 | done | 蓝灰斜体 + 左边框 |
 | — | **以下为待做功能** | — | — |
-| 29 | P0 修复：EDR 全局 Store 解耦 | pending | code-quality-audit.md |
-| 23 | P1 修复：runOneCycle 拆分 + ESE + OA | pending | code-quality-audit.md |
-| 24 | 剧本导入验证（上传时 schema 校验 + 错误提示） | pending | |
-| 25 | 多章节切换（chapter selector UI） | pending | |
-| 26 | 存档/读档功能 | pending | |
-| 27 | 角色立绘/头像系统 | pending | |
-| 28 | 背景图/场景图系统 | pending | |
-| 29 | 音效/BGM 系统 | pending | |
-| 30 | 剧本编辑器（在线编辑角色/事件） | pending | |
-| 31 | 移动端全面优化 | pending | |
-| 32 | PWA 离线支持 | pending | |
-| 33 | 多语言支持 | pending | |
+| 35 | 「俺寻思」Phase 2：分歧决策点 + 主动提示 | pending | anchorLevel soft 事件 |
+| 36 | 引力机制（NPC 自主行为拉回预置分支） | pending | 修正方案.md P1 |
+| 37 | P0 修复：EDR 全局 Store 解耦 | pending | code-quality-audit.md |
+| 38 | P1 修复：runOneCycle 拆分 + ESE + OA | pending | code-quality-audit.md |
+| 39 | 剧本导入验证（上传时 schema 校验 + 错误提示） | pending | |
+| 40 | 多章节切换（chapter selector UI） | pending | |
+| 41 | 存档/读档功能 | pending | |
+| 42 | 角色立绘/头像系统 | pending | |
+| 43 | 背景图/场景图系统 | pending | |
+| 44 | 音效/BGM 系统 | pending | |
+| 45 | 移动端全面优化 | pending | |
+| 46 | PWA 离线支持 | pending | |
+| 47 | 多语言支持 | pending | |
 
 ## Architecture Decisions
 
@@ -99,6 +106,16 @@
 - **决定**: 不设 visibleTo 字段，从 frames 的参与者列表中自动派生
 - **原因**: 避免 visibleTo 与 frames 参与者不一致的数据冗余
 - **影响**: deriveVisibleTo(frames) 函数可随时计算
+
+### AD-11: 「俺寻思」在 GameRenderer 层完成，不改 CoreLoop
+- **决定**: 思考流程（记忆检索 + LLM 内心独白）在 GameRenderer 组件层直接调用，不走 CoreLoop 状态机
+- **原因**: 思考和剧本推进正交；CoreLoop 管理 AI 管线和预置场景流，思考是独立的"旁路"操作
+- **影响**: CoreLoop 零改动，思考结果作为 thought 类型 SceneOutput 插入渲染队列
+
+### AD-12: AUTO 模式替代自主/介入模式
+- **决定**: 底栏从"自主运行/介入模式"改为传统 VN 的 AUTO toggle + 输入框
+- **原因**: 预置剧本优先模型下，"自主/介入"是 AI 沙盒概念，不再适用。AUTO 更符合 VN 玩家心智模型
+- **影响**: ChatInput 用 Tailwind 重写，旧的 mode/autoPause/dynamicGoap 状态保留但不暴露到 UI
 
 ## Known Issues
 
@@ -162,3 +179,25 @@
 - StateMachineDiagram.tsx 更新：新增 BookOpen/Hand/Layers 图标，重写 edgePath() 处理双列边路径
 - 共享 idle 节点居中（x=170），侧分支（waiting_input, goap_gen, error, reflection）居中
 - SVG 尺寸 340×420，tsc 零错误
+
+### Session 14-15
+- shadcn/ui + Tailwind CSS v4 引入（app.css、components.json、resizable 组件）
+- 剧本编辑器（VS Code 风格大纲树 + 侧面板 CRUD）
+- scarlet-danube.json 修复（缺失字段 + 旧格式迁移）
+- 文字颜色修复（Tailwind preflight 黑色文字 → text-foreground）
+
+### Session 16
+- 讨论「俺寻思」系统设计（极乐迪斯科式内心思考）
+- SceneOutput 扩展 type 字段（dialogue/narration/thought）
+- PF engine framesToScenes 映射 thought type
+- ContextEngine 暴露 recallMemories 方法
+- 新建思考 Agent（src/agents/thinking.ts）— 记忆检索 + 角色内心独白生成
+- PlayerStore 新增 autoAdvance/thinking 状态
+- ChatInput 底栏重写（Tailwind）：AUTO toggle + 输入框，替代自主/介入模式
+- GameRenderer 改造：thought 样式（蓝灰斜体 + 左边框）+ AUTO 自动推进 + 思考流程集成
+- 架构决策：AD-11（思考在 GameRenderer 层）、AD-12（AUTO 替代自主/介入）
+- 修复换脚本 debug panel 显示旧脚本状态（CoreLoop.stop + resetAll）
+- 首页剧本选择器 + "切换剧本"标签
+- 内置剧本重命名为「风起（内置示例）」
+- initStorage 改为每次启动更新内置种子数据
+- tsc 零错误 + 预览验证通过

@@ -21,10 +21,14 @@ export interface ChatMessage {
 }
 
 export interface PlayerState {
-  // Mode control
+  // Mode control (legacy — kept for AI pipeline compatibility)
   mode: 'autonomous' | 'intervention';
   autoPauseOnTaskDone: boolean;
   dynamicGoapEnabled: boolean;
+
+  // New interaction model
+  autoAdvance: boolean;    // AUTO 模式：自动推进场景
+  thinking: boolean;       // 正在思考中（思考 Agent 运行中）
 
   // Message queue
   pendingMessage: string | null;
@@ -40,6 +44,8 @@ export interface PlayerState {
   setMode: (mode: 'autonomous' | 'intervention') => void;
   toggleAutoPause: () => void;
   toggleDynamicGoap: () => void;
+  toggleAutoAdvance: () => void;
+  setThinking: (v: boolean) => void;
   sendMessage: (content: string) => void;
   consumePendingMessage: () => string | null;
   addNarratorMessage: (content: string) => void;
@@ -57,6 +63,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   mode: 'autonomous',
   autoPauseOnTaskDone: false,
   dynamicGoapEnabled: false,
+  autoAdvance: false,
+  thinking: false,
   pendingMessage: null,
   chatHistory: [],
   presetScenesActive: false,
@@ -79,6 +87,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const next = !get().dynamicGoapEnabled;
     set({ dynamicGoapEnabled: next });
     get().addSystemMessage(next ? '已允许根据角色行动习得新动作' : '已禁止根据角色行动习得新动作');
+  },
+
+  toggleAutoAdvance: () => {
+    set((s) => ({ autoAdvance: !s.autoAdvance }));
+  },
+
+  setThinking: (v) => {
+    set({ thinking: v });
   },
 
   sendMessage: (content) => {

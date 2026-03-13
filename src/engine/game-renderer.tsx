@@ -1,16 +1,28 @@
 /**
  * Game Renderer - React-based visual novel UI.
- * Scene queue: each scene is shown one-at-a-time with typewriter effect,
- * then auto-advances to the next after a brief pause.
+ *
+ * Scene queue: each scene is shown one-at-a-time with typewriter effect.
+ * Supports three scene types:
+ *   - dialogue: normal character speech or narration
+ *   - narration: pure narrative description
+ *   - thought: inner monologue (「俺寻思」system)
+ *
+ * Features:
+ *   - Click to advance / skip typewriter
+ *   - AUTO mode: auto-advance after typewriter completes
+ *   - Thinking flow: player input triggers memory recall + inner monologue
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { SceneOutput } from '../memory/schemas';
+import type { IFullContextEngine } from '../memory/context-engine';
 import { usePlayerStore } from '../player/player-store';
+import { useCharacterStore } from '../memory/character-store';
+import { runThinking } from '../agents/thinking';
 import { T } from '../theme';
 import {
-  Smile, Frown, Angry, Zap,
-  AlertCircle, Eye, Flame,
+  Smile, Frown, Angry,
+  AlertCircle, Eye, Flame, Brain, MessageCircle,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import type { LucideProps } from 'lucide-react';
@@ -18,11 +30,14 @@ import type { LucideProps } from 'lucide-react';
 interface GameRendererProps {
   scenes: SceneOutput[];
   characterName: string;
+  characterId: string;
   currentTime: string;
   currentLocation: string;
+  contextEngine: IFullContextEngine;
+  sessionId: string;
 }
 
-function useTypewriter(text: string, speed: number = 50) {
+function useTypewriter(text: string, speed: number = 40) {
   const [displayed, setDisplayed] = useState('');
   const [isComplete, setIsComplete] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -48,7 +63,6 @@ function useTypewriter(text: string, speed: number = 50) {
     };
   }, [text, speed]);
 
-  /** 跳过打字机，直接显示全文 */
   const skipToEnd = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -64,14 +78,20 @@ function useTypewriter(text: string, speed: number = 50) {
 export function GameRenderer({
   scenes,
   characterName,
+  characterId,
   currentTime,
   currentLocation,
+  contextEngine,
+  sessionId,
 }: GameRendererProps) {
   const [history, setHistory] = useState<SceneOutput[]>([]);
   const [queue, setQueue] = useState<SceneOutput[]>([]);
   const [currentScene, setCurrentScene] = useState<SceneOutput | null>(null);
   const historyRef = useRef<HTMLDivElement>(null);
   const lastScenesRef = useRef<SceneOutput[]>([]);
+
+  const autoAdvance = usePlayerStore((s) => s.autoAdvance);
+  const thinking = usePlayerStore((s) => s.thinking);
 
   // When new scenes arrive from core-loop, enqueue them
   useEffect(() => {
@@ -92,17 +112,24 @@ export function GameRenderer({
   const displayText = currentScene
     ? (currentScene.dialogue || currentScene.narration || '')
     : '';
-  const { displayed, isComplete, skipToEnd } = useTypewriter(displayText, 40);
+  const isThought = currentScene?.type === 'thought';
+  const isPlayerInput = currentScene?.type === 'player-input';
+  const typewriterSpeed = isPlayerInput ? 20 : isThought ? 30 : 40;
+  const { displayed, isComplete, skipToEnd } = useTypewriter(displayText, typewriterSpeed);
 
-  // Click handler: skip typewriter → advance to next scene → end preset sequence
-  const handleAdvance = useCallback(() => {
+  // AUTO mode: auto-advance after typewriter completes
+  useEffect(() => {
+    if (!autoAdvance || !isComplete || !currentScene || thinking) return;
+    const timer = setTimeout(() => {
+      advanceScene();
+    }, 2000);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoAdvance, isComplete, currentScene, thinking]);
+
+  // Advance to next scene
+  const advanceScene = useCallback(() => {
     if (!currentScene) return;
-
-    // If typewriter still running, skip to end first
-    if (!isComplete) {
-      skipToEnd();
-      return;
-    }
 
     // Move current scene to history
     setHistory((h) => [...h, currentScene]);
@@ -112,7 +139,111 @@ export function GameRenderer({
     if (queue.length === 0 && usePlayerStore.getState().presetScenesActive) {
       usePlayerStore.getState().endPresetSequence();
     }
-  }, [currentScene, isComplete, skipToEnd, queue.length]);
+  }, [currentScene, queue.length]);
+
+  // Click handler: skip typewriter → advance to next scene
+  const handleAdvance = useCallback(() => {
+    if (!currentScene) return;
+
+    // If typewriter still running, skip to end first
+    if (!isComplete) {
+      skipToEnd();
+      return;
+    }
+
+    advanceScene();
+  }, [currentScene, isComplete, skipToEnd, advanceScene]);
+
+  // ─── Thinking flow ───────────────────────────────────────
+  // Listen for pendingMessage and trigger thinking
+  const pendingMessage = usePlayerStore((s) => s.pendingMessage);
+
+  useEffect(() => {
+    if (!pendingMessage || thinking) return;
+
+    const doThinking = async () => {
+      const playerStore = usePlayerStore.getState();
+      const question = playerStore.consumePendingMessage();
+      if (!question) return;
+
+      // 1. Immediately show player's input as a scene
+      const playerInputScene: SceneOutput = {
+        speaker: null,
+        dialogue: question,
+        type: 'player-input',
+        emotion: undefined,
+      };
+
+      // If there's a current scene showing, move it to history and replace with player input
+      if (currentScene) {
+        setHistory((h) => [...h, currentScene]);
+      }
+      setCurrentScene(playerInputScene);
+      // Any remaining queue items go after the thinking results
+      const savedQueue = [...queue];
+      setQueue([]);
+
+      playerStore.setThinking(true);
+
+      try {
+        // Get character persona
+        const charStore = useCharacterStore.getState();
+        const persona = charStore.getPersona(characterId);
+        if (!persona) {
+          playerStore.setThinking(false);
+          setQueue(savedQueue);
+          return;
+        }
+
+        // Recall relevant memories
+        const recalledMemories = contextEngine.recallMemories(sessionId, question, 10);
+
+        // Build recent context summary from last few history entries
+        const recentScenesSummary = history
+          .slice(-5)
+          .map((s) => {
+            const text = s.dialogue || s.narration || '';
+            return s.speaker ? `${s.speaker}：${text}` : text;
+          })
+          .join('\n');
+
+        // Run thinking agent
+        const result = await runThinking({
+          characterPersona: persona,
+          playerQuestion: question,
+          recalledMemories,
+          recentScenesSummary,
+        });
+
+        // 2. Move player input to history, insert thought scenes + remaining queue
+        setHistory((h) => [...h, playerInputScene]);
+        if (result.scenes.length > 0) {
+          setCurrentScene(result.scenes[0]);
+          setQueue([...result.scenes.slice(1), ...savedQueue]);
+        } else {
+          setCurrentScene(null);
+          setQueue(savedQueue);
+        }
+      } catch (err) {
+        console.error('[Thinking] Failed:', err);
+        // Insert a fallback thought scene
+        const fallbackScene: SceneOutput = {
+          speaker: characterId,
+          dialogue: '……一时间什么也想不起来。',
+          type: 'thought',
+          emotion: 'neutral',
+        };
+        setHistory((h) => [...h, playerInputScene]);
+        setCurrentScene(fallbackScene);
+        setQueue(savedQueue);
+      } finally {
+        playerStore.setThinking(false);
+      }
+    };
+
+    doThinking();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingMessage]);
 
   // Auto-scroll history
   useEffect(() => {
@@ -145,38 +276,41 @@ export function GameRenderer({
       <div style={styles.sceneArea}>
         {/* History scroll */}
         <div ref={historyRef} style={styles.history}>
-          {history.map((h, i) => {
-            const text = h.dialogue || h.narration || '';
-            return (
-              <div key={i} style={styles.historyEntry}>
-                {h.narration && h.dialogue && (
-                  <p style={styles.historyNarration}>{h.narration}</p>
-                )}
-                {h.speaker ? (
-                  <p style={styles.historyDialogue}>
-                    <span style={styles.speakerName}>{h.speaker}</span>
-                    ：{text}
-                  </p>
-                ) : (
-                  <p style={styles.historyNarration}>{text}</p>
-                )}
-              </div>
-            );
-          })}
+          {history.map((h, i) => (
+            <HistoryEntry key={i} scene={h} />
+          ))}
         </div>
       </div>
 
       {/* Dialogue box — current scene with typewriter, click to advance */}
       {currentScene && (
-        <div style={styles.dialogueBox} onClick={handleAdvance}>
-          {currentScene.narration && currentScene.dialogue && (
+        <div
+          style={{
+            ...styles.dialogueBox,
+            ...(isThought ? styles.thoughtBox : {}),
+            ...(isPlayerInput ? styles.playerInputBox : {}),
+          }}
+          onClick={handleAdvance}
+        >
+          {currentScene.narration && currentScene.dialogue && !isThought && !isPlayerInput && (
             <p style={styles.narration}>{currentScene.narration}</p>
           )}
           <div style={styles.dialogueContent}>
-            {currentScene.speaker && (
+            {isPlayerInput ? (
               <div style={styles.speakerTag}>
-                {currentScene.speaker}
-                {currentScene.emotion && (
+                <MessageCircle size={14} style={{ color: T.gold, flexShrink: 0 }} />
+                <span style={styles.playerInputLabel}>玩家</span>
+              </div>
+            ) : currentScene.speaker ? (
+              <div style={styles.speakerTag}>
+                {isThought && (
+                  <Brain size={14} style={{ color: T.info, flexShrink: 0 }} />
+                )}
+                <span style={isThought ? styles.thoughtSpeakerName : styles.speakerName}>
+                  {currentScene.speaker}
+                  {isThought && <span style={styles.thoughtLabel}>(内心)</span>}
+                </span>
+                {currentScene.emotion && !isThought && (
                   <span style={styles.emotionBadge}>
                     {(() => {
                       const Icon = emotionIcons[currentScene.emotion!];
@@ -186,8 +320,8 @@ export function GameRenderer({
                   </span>
                 )}
               </div>
-            )}
-            <p style={styles.dialogueText}>
+            ) : null}
+            <p style={isPlayerInput ? styles.playerInputText : isThought ? styles.thoughtText : styles.dialogueText}>
               {displayed}
               {!isComplete && <span style={styles.cursor}>▊</span>}
             </p>
@@ -211,6 +345,53 @@ export function GameRenderer({
         <div style={styles.dialogueBox}>
           <p style={styles.emptyHint}>等待叙事生成...</p>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ─── History entry sub-component ────────────────────────────
+
+function HistoryEntry({ scene }: { scene: SceneOutput }) {
+  const text = scene.dialogue || scene.narration || '';
+  const isThought = scene.type === 'thought';
+  const isPlayerInput = scene.type === 'player-input';
+
+  if (isPlayerInput) {
+    return (
+      <div style={styles.historyPlayerInput}>
+        <MessageCircle size={11} style={{ color: T.gold, flexShrink: 0, marginTop: 3 }} />
+        <p style={styles.historyPlayerInputText}>{text}</p>
+      </div>
+    );
+  }
+
+  if (isThought) {
+    return (
+      <div style={styles.historyThought}>
+        <Brain size={11} style={{ color: T.info, flexShrink: 0, marginTop: 3 }} />
+        <p style={styles.historyThoughtText}>
+          {scene.speaker && (
+            <span style={styles.historyThoughtSpeaker}>{scene.speaker}(内心)：</span>
+          )}
+          {text}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.historyEntry}>
+      {scene.narration && scene.dialogue && (
+        <p style={styles.historyNarration}>{scene.narration}</p>
+      )}
+      {scene.speaker ? (
+        <p style={styles.historyDialogue}>
+          <span style={styles.speakerName}>{scene.speaker}</span>
+          ：{text}
+        </p>
+      ) : (
+        <p style={styles.historyNarration}>{text}</p>
       )}
     </div>
   );
@@ -271,6 +452,42 @@ const styles: Record<string, React.CSSProperties> = {
     margin: '4px 0',
     color: T.textSecondary,
   },
+  // ─── Thought history style ──────────────
+  historyThought: {
+    display: 'flex',
+    gap: '6px',
+    marginBottom: '12px',
+    opacity: 0.55,
+    fontSize: '14px',
+    lineHeight: '1.8',
+    borderLeft: `2px solid ${T.info}`,
+    paddingLeft: '10px',
+  },
+  historyThoughtText: {
+    fontStyle: 'italic',
+    color: T.info,
+    margin: 0,
+  },
+  historyThoughtSpeaker: {
+    fontWeight: 500,
+    marginRight: '2px',
+  },
+  // ─── Player input history style ───────
+  historyPlayerInput: {
+    display: 'flex',
+    gap: '6px',
+    marginBottom: '12px',
+    opacity: 0.55,
+    fontSize: '14px',
+    lineHeight: '1.8',
+    borderLeft: `2px solid ${T.gold}`,
+    paddingLeft: '10px',
+  },
+  historyPlayerInputText: {
+    color: T.gold,
+    margin: 0,
+  },
+  // ─── Dialogue box ──────────────────────
   dialogueBox: {
     background: T.bgSurface,
     borderRadius: `${T.radiusXl} ${T.radiusXl} 0 0`,
@@ -280,6 +497,17 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: T.shadowCard,
     cursor: 'pointer',
     userSelect: 'none',
+  },
+  // ─── Thought box override ──────────────
+  thoughtBox: {
+    borderLeft: `3px solid ${T.info}`,
+    background: `color-mix(in srgb, ${T.bgSurface} 90%, ${T.info} 10%)`,
+  },
+  // ─── Player input box override ────────
+  playerInputBox: {
+    borderLeft: `3px solid ${T.gold}`,
+    background: `color-mix(in srgb, ${T.bgSurface} 90%, ${T.gold} 10%)`,
+    minHeight: '80px',
   },
   narration: {
     fontStyle: 'italic',
@@ -300,6 +528,31 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontSize: '15px',
   },
+  thoughtSpeakerName: {
+    color: T.info,
+    fontWeight: 500,
+    fontSize: '15px',
+  },
+  thoughtLabel: {
+    fontSize: '12px',
+    color: T.info,
+    opacity: 0.7,
+    marginLeft: '4px',
+    fontFamily: T.fontSans,
+  },
+  playerInputLabel: {
+    color: T.gold,
+    fontWeight: 500,
+    fontSize: '14px',
+    fontFamily: T.fontSans,
+  },
+  playerInputText: {
+    fontSize: '16px',
+    lineHeight: '1.8',
+    margin: 0,
+    color: T.gold,
+    minHeight: '30px',
+  },
   emotionBadge: {
     fontSize: '12px',
     background: T.accentMuted,
@@ -313,6 +566,14 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: '1.8',
     margin: 0,
     color: T.textPrimary,
+    minHeight: '50px',
+  },
+  thoughtText: {
+    fontSize: '16px',
+    lineHeight: '1.8',
+    margin: 0,
+    color: T.info,
+    fontStyle: 'italic',
     minHeight: '50px',
   },
   cursor: {
