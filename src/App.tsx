@@ -21,7 +21,7 @@ import { Timeline } from './timeline/timeline';
 import type { SceneOutput, WorldEvent, GOAPAction } from './memory/schemas';
 import { ScriptEditor } from './editor/ScriptEditor';
 import { T } from './theme';
-import { Settings, Play, Pause, Square, RefreshCw, Hand } from 'lucide-react';
+import { Settings, Play, Pause, Square } from 'lucide-react';
 
 type AppView = 'start' | 'settings' | 'game' | 'editor';
 
@@ -35,13 +35,17 @@ export function App() {
   const timelineRef = useRef<Timeline | null>(null);
   const contextEngineRef = useRef<NovelContextEngine | null>(null);
 
+  const resetCharacters = useCharacterStore((s) => s.resetAll);
   const initCharacter = useCharacterStore((s) => s.initCharacter);
   const debug = useDebugStore();
-  const playerMode = usePlayerStore((s) => s.mode);
+  // playerMode kept for AI pipeline compatibility
+  const _playerMode = usePlayerStore((s) => s.mode);
 
   // Settings store
   const settingsInitialized = useSettingsStore((s) => s.initialized);
   const activeScript = useSettingsStore((s) => s.activeScript);
+  const scripts = useSettingsStore((s) => s.scripts);
+  const activeScriptId = useSettingsStore((s) => s.activeScriptId);
 
   // Initialize storage + model config on mount
   useEffect(() => {
@@ -53,7 +57,12 @@ export function App() {
     const script = useSettingsStore.getState().activeScript;
     if (!script) return;
 
-    // Initialize all characters from the script
+    // Stop any previous loop to prevent stale data leaking
+    coreLoopRef.current?.stop();
+    coreLoopRef.current = null;
+
+    // Clear stale character data from previous runs, then initialize
+    resetCharacters();
     for (const character of script.characters) {
       initCharacter(character.core.id, character);
     }
@@ -109,7 +118,7 @@ export function App() {
       console.error('Core loop crashed:', err);
       setView('start');
     });
-  }, [initCharacter, debug]);
+  }, [resetCharacters, initCharacter, debug]);
 
   const handleStop = useCallback(() => {
     coreLoopRef.current?.stop();
@@ -148,15 +157,43 @@ export function App() {
             <h1 style={styles.title}>AI互动视觉小说引擎</h1>
             <p style={styles.subtitle}>Agent记忆系统验证 MVP</p>
 
-            {settingsInitialized && activeScript ? (
-              <div style={styles.charInfo}>
-                <p style={styles.scriptLabel}>{activeScript.metadata.name}</p>
-                <p style={styles.charName}>{charName}</p>
-                <p style={styles.charDesc}>{charDesc}</p>
-                <p style={styles.charMeta}>
-                  {activeScript.characters.length} 角色 · {activeScript.chapters[0]?.events.length ?? 0} 事件 · {activeScript.goapActions.length} 动作
-                </p>
-              </div>
+            {settingsInitialized ? (
+              <>
+                {/* Script selector */}
+                {scripts.length > 1 && (
+                  <div style={styles.scriptSelector}>
+                    <p style={styles.scriptSelectorLabel}>切换剧本</p>
+                    {scripts.map((s) => (
+                      <button
+                        key={s.id}
+                        style={{
+                          ...styles.scriptTab,
+                          ...(s.id === activeScriptId ? styles.scriptTabActive : {}),
+                        }}
+                        onClick={() => useSettingsStore.getState().selectScript(s.id)}
+                      >
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Active script info */}
+                {activeScript ? (
+                  <div style={styles.charInfo}>
+                    <p style={styles.scriptLabel}>{activeScript.metadata.name}</p>
+                    <p style={styles.charName}>{charName}</p>
+                    <p style={styles.charDesc}>{charDesc}</p>
+                    <p style={styles.charMeta}>
+                      {activeScript.characters.length} 角色 · {activeScript.chapters[0]?.events.length ?? 0} 事件 · {activeScript.goapActions.length} 动作
+                    </p>
+                  </div>
+                ) : (
+                  <div style={styles.charInfo}>
+                    <p style={styles.charDesc}>请选择剧本</p>
+                  </div>
+                )}
+              </>
             ) : (
               <div style={styles.charInfo}>
                 <p style={styles.charDesc}>正在加载...</p>
@@ -183,7 +220,7 @@ export function App() {
             </div>
 
             <p style={styles.hint}>
-              底部输入框可切换"自主运行"和"介入模式"
+              点击画面推进剧本，输入框可触发角色内心思考
             </p>
           </div>
         )}
@@ -216,9 +253,7 @@ export function App() {
                 <Square size={12} strokeWidth={1.5} /> 停止
               </button>
               <span style={styles.modeIndicator}>
-                {playerMode === 'autonomous'
-                  ? <><RefreshCw size={12} strokeWidth={1.5} /> 自主</>
-                  : <><Hand size={12} strokeWidth={1.5} /> 介入</>}
+                {activeScript?.metadata.name ?? ''}
               </span>
             </div>
 
@@ -232,12 +267,15 @@ export function App() {
                 <GameRenderer
                   scenes={scenes}
                   characterName={charName}
+                  characterId={activeCharId}
                   currentTime={debug.timeline.currentTime || '08:00'}
                   currentLocation={
                     timelineRef.current?.getLocationName(
                       debug.currentGoal?.where ?? 'home',
                     ) ?? activeScript?.chapters[0]?.locations[0]?.name ?? ''
                   }
+                  contextEngine={contextEngineRef.current!}
+                  sessionId={`novel:${activeCharId}`}
                 />
               </div>
             </div>
@@ -372,6 +410,39 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '12px',
     marginTop: '16px',
     fontFamily: T.fontSans,
+  },
+  scriptSelector: {
+    display: 'flex',
+    gap: '6px',
+    flexWrap: 'wrap' as const,
+    justifyContent: 'center',
+    maxWidth: '480px',
+    alignItems: 'center',
+  },
+  scriptSelectorLabel: {
+    width: '100%',
+    textAlign: 'center' as const,
+    color: T.textTertiary,
+    fontSize: '11px',
+    margin: '0 0 2px',
+    fontFamily: T.fontSans,
+    letterSpacing: '1px',
+  },
+  scriptTab: {
+    padding: '6px 16px',
+    background: 'transparent',
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radiusPill,
+    color: T.textSecondary,
+    fontSize: '13px',
+    cursor: 'pointer',
+    fontFamily: T.fontSans,
+    transition: 'all 0.15s',
+  },
+  scriptTabActive: {
+    background: T.accent,
+    borderColor: T.accent,
+    color: '#fff',
   },
   gameContent: {
     flex: 1,
