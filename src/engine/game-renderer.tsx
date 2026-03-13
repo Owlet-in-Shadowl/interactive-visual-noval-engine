@@ -22,7 +22,7 @@ import { runThinking } from '../agents/thinking';
 import { T } from '../theme';
 import {
   Smile, Frown, Angry,
-  AlertCircle, Eye, Flame, Brain,
+  AlertCircle, Eye, Flame, Brain, MessageCircle,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import type { LucideProps } from 'lucide-react';
@@ -113,7 +113,8 @@ export function GameRenderer({
     ? (currentScene.dialogue || currentScene.narration || '')
     : '';
   const isThought = currentScene?.type === 'thought';
-  const typewriterSpeed = isThought ? 30 : 40;
+  const isPlayerInput = currentScene?.type === 'player-input';
+  const typewriterSpeed = isPlayerInput ? 20 : isThought ? 30 : 40;
   const { displayed, isComplete, skipToEnd } = useTypewriter(displayText, typewriterSpeed);
 
   // AUTO mode: auto-advance after typewriter completes
@@ -165,6 +166,23 @@ export function GameRenderer({
       const question = playerStore.consumePendingMessage();
       if (!question) return;
 
+      // 1. Immediately show player's input as a scene
+      const playerInputScene: SceneOutput = {
+        speaker: null,
+        dialogue: question,
+        type: 'player-input',
+        emotion: undefined,
+      };
+
+      // If there's a current scene showing, move it to history and replace with player input
+      if (currentScene) {
+        setHistory((h) => [...h, currentScene]);
+      }
+      setCurrentScene(playerInputScene);
+      // Any remaining queue items go after the thinking results
+      const savedQueue = [...queue];
+      setQueue([]);
+
       playerStore.setThinking(true);
 
       try {
@@ -173,6 +191,7 @@ export function GameRenderer({
         const persona = charStore.getPersona(characterId);
         if (!persona) {
           playerStore.setThinking(false);
+          setQueue(savedQueue);
           return;
         }
 
@@ -196,9 +215,14 @@ export function GameRenderer({
           recentScenesSummary,
         });
 
-        // Insert thought scenes into queue (before remaining scenes)
+        // 2. Move player input to history, insert thought scenes + remaining queue
+        setHistory((h) => [...h, playerInputScene]);
         if (result.scenes.length > 0) {
-          setQueue((q) => [...result.scenes, ...q]);
+          setCurrentScene(result.scenes[0]);
+          setQueue([...result.scenes.slice(1), ...savedQueue]);
+        } else {
+          setCurrentScene(null);
+          setQueue(savedQueue);
         }
       } catch (err) {
         console.error('[Thinking] Failed:', err);
@@ -209,7 +233,9 @@ export function GameRenderer({
           type: 'thought',
           emotion: 'neutral',
         };
-        setQueue((q) => [fallbackScene, ...q]);
+        setHistory((h) => [...h, playerInputScene]);
+        setCurrentScene(fallbackScene);
+        setQueue(savedQueue);
       } finally {
         playerStore.setThinking(false);
       }
@@ -262,14 +288,20 @@ export function GameRenderer({
           style={{
             ...styles.dialogueBox,
             ...(isThought ? styles.thoughtBox : {}),
+            ...(isPlayerInput ? styles.playerInputBox : {}),
           }}
           onClick={handleAdvance}
         >
-          {currentScene.narration && currentScene.dialogue && !isThought && (
+          {currentScene.narration && currentScene.dialogue && !isThought && !isPlayerInput && (
             <p style={styles.narration}>{currentScene.narration}</p>
           )}
           <div style={styles.dialogueContent}>
-            {currentScene.speaker && (
+            {isPlayerInput ? (
+              <div style={styles.speakerTag}>
+                <MessageCircle size={14} style={{ color: T.gold, flexShrink: 0 }} />
+                <span style={styles.playerInputLabel}>玩家</span>
+              </div>
+            ) : currentScene.speaker ? (
               <div style={styles.speakerTag}>
                 {isThought && (
                   <Brain size={14} style={{ color: T.info, flexShrink: 0 }} />
@@ -288,8 +320,8 @@ export function GameRenderer({
                   </span>
                 )}
               </div>
-            )}
-            <p style={isThought ? styles.thoughtText : styles.dialogueText}>
+            ) : null}
+            <p style={isPlayerInput ? styles.playerInputText : isThought ? styles.thoughtText : styles.dialogueText}>
               {displayed}
               {!isComplete && <span style={styles.cursor}>▊</span>}
             </p>
@@ -323,6 +355,16 @@ export function GameRenderer({
 function HistoryEntry({ scene }: { scene: SceneOutput }) {
   const text = scene.dialogue || scene.narration || '';
   const isThought = scene.type === 'thought';
+  const isPlayerInput = scene.type === 'player-input';
+
+  if (isPlayerInput) {
+    return (
+      <div style={styles.historyPlayerInput}>
+        <MessageCircle size={11} style={{ color: T.gold, flexShrink: 0, marginTop: 3 }} />
+        <p style={styles.historyPlayerInputText}>{text}</p>
+      </div>
+    );
+  }
 
   if (isThought) {
     return (
@@ -430,6 +472,21 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     marginRight: '2px',
   },
+  // ─── Player input history style ───────
+  historyPlayerInput: {
+    display: 'flex',
+    gap: '6px',
+    marginBottom: '12px',
+    opacity: 0.55,
+    fontSize: '14px',
+    lineHeight: '1.8',
+    borderLeft: `2px solid ${T.gold}`,
+    paddingLeft: '10px',
+  },
+  historyPlayerInputText: {
+    color: T.gold,
+    margin: 0,
+  },
   // ─── Dialogue box ──────────────────────
   dialogueBox: {
     background: T.bgSurface,
@@ -445,6 +502,12 @@ const styles: Record<string, React.CSSProperties> = {
   thoughtBox: {
     borderLeft: `3px solid ${T.info}`,
     background: `color-mix(in srgb, ${T.bgSurface} 90%, ${T.info} 10%)`,
+  },
+  // ─── Player input box override ────────
+  playerInputBox: {
+    borderLeft: `3px solid ${T.gold}`,
+    background: `color-mix(in srgb, ${T.bgSurface} 90%, ${T.gold} 10%)`,
+    minHeight: '80px',
   },
   narration: {
     fontStyle: 'italic',
@@ -476,6 +539,19 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.7,
     marginLeft: '4px',
     fontFamily: T.fontSans,
+  },
+  playerInputLabel: {
+    color: T.gold,
+    fontWeight: 500,
+    fontSize: '14px',
+    fontFamily: T.fontSans,
+  },
+  playerInputText: {
+    fontSize: '16px',
+    lineHeight: '1.8',
+    margin: 0,
+    color: T.gold,
+    minHeight: '30px',
   },
   emotionBadge: {
     fontSize: '12px',
