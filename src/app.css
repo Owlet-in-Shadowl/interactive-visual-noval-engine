@@ -83,3 +83,12 @@
   --sidebar-border: rgba(222, 220, 209, 0.15);
   --sidebar-ring: #d97757;
 }
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

@@ -64,7 +64,7 @@ export function FrameEditor({ ci, ei, fi }: FrameEditorProps) {
       <div className="grid grid-cols-2 gap-3">
         <FieldGroup label="Speaker">
           <select
-            className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
             value={frame.speaker ?? '__null__'}
             onChange={(e) => update({ speaker: e.target.value === '__null__' ? null : e.target.value })}
           >
@@ -74,7 +74,7 @@ export function FrameEditor({ ci, ei, fi }: FrameEditorProps) {
         </FieldGroup>
         <FieldGroup label="Type">
           <select
-            className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
             value={frame.content.type}
             onChange={(e) => updateContent({ type: e.target.value as FrameType })}
           >
@@ -113,7 +113,7 @@ export function FrameEditor({ ci, ei, fi }: FrameEditorProps) {
       {/* Addressee */}
       <FieldGroup label="Addressee">
         <select
-          className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+          className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
           value={frame.addressee ?? '__none__'}
           onChange={(e) => update({ addressee: e.target.value === '__none__' ? undefined : e.target.value })}
         >

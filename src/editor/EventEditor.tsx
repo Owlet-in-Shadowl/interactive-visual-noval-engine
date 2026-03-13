@@ -47,7 +47,7 @@ export function EventEditor({ ci, ei }: EventEditorProps) {
         </FieldGroup>
         <FieldGroup label="Severity">
           <select
-            className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
             value={event.severity}
             onChange={(e) => patch({ severity: e.target.value as WorldEvent['severity'] })}
           >
@@ -72,7 +72,7 @@ export function EventEditor({ ci, ei }: EventEditorProps) {
 
       <FieldGroup label="Anchor Level">
         <select
-          className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+          className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
           value={event.anchorLevel ?? 'strong'}
           onChange={(e) => patch({ anchorLevel: e.target.value as WorldEvent['anchorLevel'] })}
         >
