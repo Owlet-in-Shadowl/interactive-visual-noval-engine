@@ -108,6 +108,16 @@ export function GameRenderer({
     setQueue(rest);
   }, [currentScene, queue]);
 
+  // Sync povSpeaking: true when current scene's speaker is the POV character
+  // This controls whether the player can trigger thinking in ChatInput
+  useEffect(() => {
+    const isPov = currentScene?.speaker === characterId
+      || currentScene?.type === 'thought'
+      || currentScene?.type === 'player-input'
+      || (currentScene?.speaker === null && !currentScene?.type);  // narration counts as POV context
+    usePlayerStore.getState().setPovSpeaking(!!isPov);
+  }, [currentScene, characterId]);
+
   // Get display text for typewriter
   const displayText = currentScene
     ? (currentScene.dialogue || currentScene.narration || '')
@@ -117,15 +127,30 @@ export function GameRenderer({
   const typewriterSpeed = isPlayerInput ? 20 : isThought ? 30 : 40;
   const { displayed, isComplete, skipToEnd } = useTypewriter(displayText, typewriterSpeed);
 
-  // AUTO mode: auto-advance after typewriter completes
+  // AUTO mode auto-advance
+  // - player-input during thinking: stay put (thinking completion handles transition)
+  // - player-input after thinking: auto-advance quickly (player knows what they typed)
+  // - all other scenes (including thought): follow AUTO toggle
   useEffect(() => {
-    if (!autoAdvance || !isComplete || !currentScene || thinking) return;
-    const timer = setTimeout(() => {
-      advanceScene();
-    }, 2000);
-    return () => clearTimeout(timer);
+    if (!isComplete || !currentScene) return;
+
+    // During thinking, player-input stays put
+    if (isPlayerInput && thinking) return;
+
+    // Player input (thinking done): auto-advance quickly
+    if (isPlayerInput) {
+      const timer = setTimeout(() => advanceScene(), 400);
+      return () => clearTimeout(timer);
+    }
+
+    // All other scenes (dialogue, narration, thought): follow AUTO toggle
+    if (autoAdvance && !thinking) {
+      const delay = isThought ? 1500 : 2000;
+      const timer = setTimeout(() => advanceScene(), delay);
+      return () => clearTimeout(timer);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoAdvance, isComplete, currentScene, thinking]);
+  }, [autoAdvance, isComplete, currentScene, thinking, isPlayerInput, isThought]);
 
   // Advance to next scene
   const advanceScene = useCallback(() => {
@@ -139,11 +164,12 @@ export function GameRenderer({
     if (queue.length === 0 && usePlayerStore.getState().presetScenesActive) {
       usePlayerStore.getState().endPresetSequence();
     }
-  }, [currentScene, queue.length]);
+  }, [currentScene, queue]);
 
   // Click handler: skip typewriter → advance to next scene
+  // Blocked during thinking to prevent race conditions with the thinking flow
   const handleAdvance = useCallback(() => {
-    if (!currentScene) return;
+    if (!currentScene || thinking) return;
 
     // If typewriter still running, skip to end first
     if (!isComplete) {
@@ -152,7 +178,7 @@ export function GameRenderer({
     }
 
     advanceScene();
-  }, [currentScene, isComplete, skipToEnd, advanceScene]);
+  }, [currentScene, thinking, isComplete, skipToEnd, advanceScene]);
 
   // ─── Thinking flow ───────────────────────────────────────
   // Listen for pendingMessage and trigger thinking
@@ -224,6 +250,21 @@ export function GameRenderer({
           setCurrentScene(null);
           setQueue(savedQueue);
         }
+
+        // 3. Write thinking results back to episodic memory (层次1)
+        // The character "remembers" what they thought about
+        for (const scene of result.scenes) {
+          const thoughtContent = `[内心思考] 关于"${question}"：${scene.dialogue || ''}`;
+          await contextEngine.ingest({
+            sessionId,
+            message: { role: 'assistant', content: thoughtContent },
+          });
+        }
+        // Also ingest the player's question as observation
+        await contextEngine.ingest({
+          sessionId,
+          message: { role: 'user', content: `[玩家思考] ${question}` },
+        });
       } catch (err) {
         console.error('[Thinking] Failed:', err);
         // Insert a fallback thought scene

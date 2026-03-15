@@ -21,14 +21,18 @@ export function ChatInput({ onSendMessage, isRunning }: ChatInputProps) {
 
   const autoAdvance = usePlayerStore((s) => s.autoAdvance);
   const thinking = usePlayerStore((s) => s.thinking);
+  const povSpeaking = usePlayerStore((s) => s.povSpeaking);
   const toggleAutoAdvance = usePlayerStore((s) => s.toggleAutoAdvance);
+
+  // Can think only when running, not already thinking, and POV character is active
+  const canThink = isRunning && !thinking && povSpeaking;
 
   const handleSubmit = useCallback(() => {
     const trimmed = inputValue.trim();
-    if (!trimmed || thinking) return;
+    if (!trimmed || !canThink) return;
     onSendMessage(trimmed);
     setInputValue('');
-  }, [inputValue, onSendMessage, thinking]);
+  }, [inputValue, onSendMessage, canThink]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -73,29 +77,31 @@ export function ChatInput({ onSendMessage, isRunning }: ChatInputProps) {
             ? '思考中…'
             : !isRunning
               ? '等待游戏开始…'
-              : '想确认什么？可以在这里思考…'
+              : !povSpeaking
+                ? '等待角色发言…'
+                : '想确认什么？可以在这里思考…'
         }
-        disabled={!isRunning || thinking}
+        disabled={!canThink}
         className={`
           flex-1 px-3 py-1.5 rounded-md text-sm
           bg-muted border border-border
           text-foreground placeholder:text-muted-foreground
           outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20
           transition-colors
-          ${(!isRunning || thinking) ? 'opacity-50 cursor-not-allowed' : ''}
+          ${!canThink ? 'opacity-50 cursor-not-allowed' : ''}
         `}
       />
 
       {/* Send / Loading button */}
       <button
         onClick={handleSubmit}
-        disabled={!isRunning || !inputValue.trim() || thinking}
+        disabled={!canThink || !inputValue.trim()}
         className={`
           flex items-center justify-center w-8 h-8 rounded-md shrink-0
           transition-colors
           ${thinking
             ? 'bg-muted text-muted-foreground cursor-not-allowed'
-            : isRunning && inputValue.trim()
+            : canThink && inputValue.trim()
               ? 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'
               : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
           }
