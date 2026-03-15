@@ -19,6 +19,7 @@ import { useSettingsStore } from './settings/settings-store';
 import { useModelConfigStore } from './settings/model-config-store';
 import { Timeline } from './timeline/timeline';
 import type { SceneOutput, WorldEvent, GOAPAction } from './memory/schemas';
+import { normalizeChapters } from './storage/storage-interface';
 import { ScriptEditor } from './editor/ScriptEditor';
 import { T } from './theme';
 import { Settings, Play, Pause, Square } from 'lucide-react';
@@ -67,8 +68,11 @@ export function App() {
       initCharacter(character.core.id, character);
     }
 
+    // Normalize chapters (auto-assign IDs to those missing them)
+    const chapters = normalizeChapters(script.chapters);
+
     // Use first chapter for timeline
-    const chapter = script.chapters[0];
+    const chapter = chapters[0];
     const timeline = new Timeline(
       480, // 08:00
       chapter.events as WorldEvent[],
@@ -97,6 +101,7 @@ export function App() {
       contextEngine,
       timeline,
       goapActions: runtimeActions,
+      chapters,
       onScenesReady: (newScenes) => {
         setScenes(newScenes);
       },

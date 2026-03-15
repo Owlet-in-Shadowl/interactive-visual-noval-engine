@@ -32,6 +32,7 @@ export function createBuiltinScript(): ScriptBundle {
     ],
     chapters: [
       {
+        id: 'builtin-ch1',
         chapter: chapter1Data.chapter,
         events: chapter1Data.events as WorldEvent[],
         locations: chapter1Data.locations,

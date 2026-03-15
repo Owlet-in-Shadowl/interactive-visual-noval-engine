@@ -29,6 +29,8 @@ export interface PlayerState {
   // New interaction model
   autoAdvance: boolean;    // AUTO 模式：自动推进场景
   thinking: boolean;       // 正在思考中（思考 Agent 运行中）
+  povSpeaking: boolean;    // POV 角色正在说话（允许思考）
+  divergenceActive: boolean; // 分歧点活跃（玩家行为影响剧情走向）
 
   // Message queue
   pendingMessage: string | null;
@@ -46,6 +48,8 @@ export interface PlayerState {
   toggleDynamicGoap: () => void;
   toggleAutoAdvance: () => void;
   setThinking: (v: boolean) => void;
+  setPovSpeaking: (v: boolean) => void;
+  setDivergenceActive: (v: boolean) => void;
   sendMessage: (content: string) => void;
   consumePendingMessage: () => string | null;
   addNarratorMessage: (content: string) => void;
@@ -65,6 +69,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   dynamicGoapEnabled: false,
   autoAdvance: false,
   thinking: false,
+  povSpeaking: false,
+  divergenceActive: false,
   pendingMessage: null,
   chatHistory: [],
   presetScenesActive: false,
@@ -95,6 +101,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   setThinking: (v) => {
     set({ thinking: v });
+  },
+
+  setPovSpeaking: (v) => {
+    set({ povSpeaking: v });
+  },
+
+  setDivergenceActive: (v) => {
+    set({ divergenceActive: v });
   },
 
   sendMessage: (content) => {

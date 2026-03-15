@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import type { ScriptBundle } from '../storage/storage-interface';
+import type { ScriptBundle, ChapterData } from '../storage/storage-interface';
 import type { WorldEvent } from '../memory/schemas';
 import type { ParticipationFrame } from '../pf/schema';
 import { useSettingsStore } from '../settings/settings-store';
@@ -48,6 +48,10 @@ interface EditorState {
   close(): void;
   selectNode(nodeId: string): void;
   toggleExpand(nodeId: string): void;
+
+  updateChapter(ci: number, patch: Partial<ChapterData>): void;
+  addChapter(afterIndex?: number): void;
+  deleteChapter(ci: number): void;
 
   updateEvent(ci: number, ei: number, patch: Partial<WorldEvent>): void;
   updateFrame(ci: number, ei: number, fi: number, patch: Partial<ParticipationFrame>): void;
@@ -100,6 +104,46 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       else next.add(id);
       return { expandedNodes: next };
     });
+  },
+
+  updateChapter(ci: number, patch: Partial<ChapterData>) {
+    const bundle = get().bundle;
+    if (!bundle) return;
+    const chapter = bundle.chapters[ci];
+    if (!chapter) return;
+    Object.assign(chapter, patch);
+    set({ bundle: { ...bundle }, dirty: true });
+  },
+
+  addChapter(afterIndex?: number) {
+    const bundle = get().bundle;
+    if (!bundle) return;
+    const idx = afterIndex !== undefined ? afterIndex + 1 : bundle.chapters.length;
+    const newChapter: ChapterData = {
+      id: `chapter-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+      chapter: `新章节 ${idx + 1}`,
+      events: [],
+      locations: [],
+    };
+    bundle.chapters.splice(idx, 0, newChapter);
+    set({
+      bundle: { ...bundle },
+      dirty: true,
+      selectedNode: nodeId('chapter', idx),
+    });
+  },
+
+  deleteChapter(ci: number) {
+    const bundle = get().bundle;
+    if (!bundle || bundle.chapters.length <= 1) return; // 至少保留一个章节
+    bundle.chapters.splice(ci, 1);
+    const { selectedNode } = get();
+    let nextSelected = selectedNode;
+    if (selectedNode === nodeId('chapter', ci)) {
+      if (ci > 0) nextSelected = nodeId('chapter', ci - 1);
+      else nextSelected = nodeId('chapter', 0);
+    }
+    set({ bundle: { ...bundle }, dirty: true, selectedNode: nextSelected });
   },
 
   updateEvent(ci: number, ei: number, patch: Partial<WorldEvent>) {

@@ -25,6 +25,8 @@ import { Timeline } from '../timeline/timeline';
 import { useDebugStore } from '../debug/debug-store';
 import { usePlayerStore } from '../player/player-store';
 import type { GOAPAction, SceneOutput, WorldEvent, Goal5W1H, EpisodicMemory } from '../memory/schemas';
+import type { ChapterData, DivergencePoint } from '../storage/storage-interface';
+import { scoreText, accumulateScores, resolveGravity, initScores } from './gravity';
 import { framesToScenes, projectAllMemories } from '../pf';
 
 export interface CoreLoopConfig {
@@ -32,7 +34,10 @@ export interface CoreLoopConfig {
   contextEngine: IFullContextEngine;
   timeline: Timeline;
   goapActions: GOAPAction[];
+  chapters: ChapterData[];
+  initialChapterIndex?: number;
   onScenesReady: (scenes: SceneOutput[]) => void;
+  onChapterTransition?: (fromChapter: ChapterData, toChapter: ChapterData) => void;
   onLoopComplete: () => void;
   onError: (error: Error) => void;
 }
@@ -42,10 +47,18 @@ export class CoreLoop {
   private running = false;
   private paused = false;
   private sessionId: string;
+  private currentChapterIndex: number;
+  private chapterExhausted = false;
+  private divergence: {
+    point: DivergencePoint;
+    scores: Map<string, number>;
+    actionsRemaining: number;
+  } | null = null;
 
   constructor(config: CoreLoopConfig) {
     this.config = config;
     this.sessionId = `novel:${config.characterId}`;
+    this.currentChapterIndex = config.initialChapterIndex ?? 0;
   }
 
   async start() {
@@ -109,6 +122,13 @@ export class CoreLoop {
   private async runOneCycle(): Promise<void> {
     const { contextEngine, timeline, goapActions, characterId } = this.config;
     const debug = useDebugStore.getState();
+
+    // ─── 章节切换检测 ───
+    if (!this.chapterExhausted && timeline.allEventsConsumed()) {
+      this.chapterExhausted = true;
+      const transitioned = this.resolveNextChapter();
+      if (transitioned) return; // 切换成功，下一轮会从新章节开始
+    }
 
     // ─── 快速路径：预置场景（PF 信源） ───
     const nextEvent = timeline.peekNextEvent();
@@ -275,6 +295,11 @@ export class CoreLoop {
         // Advance time
         timeline.advance(plan.totalTime);
       }
+    }
+
+    // ─── 引力评分（分歧点活跃时） ───
+    if (this.divergence) {
+      await this.tickDivergence(debug);
     }
 
     // ⑧ Post-processing (memory compaction)
@@ -577,6 +602,148 @@ export class CoreLoop {
       return active.map((e) => e.description).join('；');
     }
     return `${timeline.formatTime()}，一切如常。`;
+  }
+
+  // ─── 章节切换 ───────────────────────────────────────
+
+  /**
+   * 检查当前章节的 next 字段，决定下一步：
+   * - undefined：按数组顺序找下一个章节
+   * - string：跳转到指定章节 ID
+   * - DivergencePoint：进入分歧模式（Phase 3）
+   * 返回 true 表示成功切换，false 表示无后续章节（进入纯 AI 模式）
+   */
+  private resolveNextChapter(): boolean {
+    const { chapters } = this.config;
+    const current = chapters[this.currentChapterIndex];
+    const next = current?.next;
+
+    if (next === undefined) {
+      // 按数组顺序找下一个
+      const nextIndex = this.currentChapterIndex + 1;
+      if (nextIndex < chapters.length) {
+        return this.transitionToChapter(chapters[nextIndex], nextIndex);
+      }
+      // 没有后续章节 → 纯 AI 模式
+      return false;
+    }
+
+    if (typeof next === 'string') {
+      // 线性跳转到指定 ID
+      const targetIndex = chapters.findIndex((ch) => ch.id === next);
+      if (targetIndex >= 0) {
+        return this.transitionToChapter(chapters[targetIndex], targetIndex);
+      }
+      // ID 找不到 → fallback 到数组顺序
+      const fallbackIndex = this.currentChapterIndex + 1;
+      if (fallbackIndex < chapters.length) {
+        return this.transitionToChapter(chapters[fallbackIndex], fallbackIndex);
+      }
+      return false;
+    }
+
+    // DivergencePoint — 进入分歧模式，启动引力评分
+    const divergence = next as DivergencePoint;
+    this.divergence = {
+      point: divergence,
+      scores: initScores(divergence.branches),
+      actionsRemaining: divergence.maxFreeActions,
+    };
+    usePlayerStore.getState().setDivergenceActive(true);
+
+    const debug = useDebugStore.getState();
+    const branchLabels = divergence.branches.map((b) => b.label).join(' / ');
+    debug.pushError(`[分歧点] 进入自由行动期（${divergence.maxFreeActions} 轮），分支：${branchLabels}`);
+
+    // 不切换章节，继续 AI 管线；引力评分在 tickDivergence 中进行
+    return false;
+  }
+
+  /**
+   * 每轮 AI 管线结束后，如果分歧点活跃，执行一次引力评分。
+   * 评分来源：最近一轮生成的场景文本。
+   * 达到上限或 decisive 时，收束到目标分支。
+   */
+  private async tickDivergence(
+    debug: ReturnType<typeof useDebugStore.getState>,
+  ): Promise<void> {
+    if (!this.divergence) return;
+
+    const { point, scores } = this.divergence;
+
+    // 从最近的场景中提取文本用于评分
+    const recentScenes = debug.currentScenes ?? [];
+    const textToScore = recentScenes
+      .map((s: SceneOutput) => [s.dialogue, s.narration].filter(Boolean).join(' '))
+      .join(' ');
+
+    if (textToScore) {
+      const roundScores = scoreText(textToScore, point.branches);
+      accumulateScores(scores, roundScores);
+    }
+
+    this.divergence.actionsRemaining--;
+
+    // 检查是否应该收束
+    const result = resolveGravity(scores, point.branches, point.defaultBranch);
+    const shouldResolve = this.divergence.actionsRemaining <= 0 || result.decisive;
+
+    if (shouldResolve) {
+      const { chapters } = this.config;
+      const targetIndex = chapters.findIndex((ch) => ch.id === result.chapterId);
+      const targetLabel = point.branches.find(
+        (b) => b.targetChapterId === result.chapterId,
+      )?.label ?? result.chapterId;
+
+      debug.pushError(
+        `[引力收束] → ${targetLabel}（剩余${this.divergence.actionsRemaining}轮，decisive=${result.decisive}）`,
+      );
+
+      // 清理分歧状态
+      this.divergence = null;
+      usePlayerStore.getState().setDivergenceActive(false);
+
+      if (targetIndex >= 0) {
+        this.transitionToChapter(chapters[targetIndex], targetIndex);
+      }
+    } else {
+      // 输出当前分数到 debug
+      const scoreStr = point.branches
+        .map((b) => `${b.label}:${(scores.get(b.targetChapterId) ?? 0).toFixed(1)}`)
+        .join(' | ');
+      debug.pushError(
+        `[引力] 剩余${this.divergence.actionsRemaining}轮 — ${scoreStr}`,
+      );
+    }
+  }
+
+  /**
+   * 切换到目标章节：替换 Timeline 事件，重置状态
+   */
+  private transitionToChapter(target: ChapterData, targetIndex: number): boolean {
+    const { timeline } = this.config;
+    const current = this.config.chapters[this.currentChapterIndex];
+
+    // 替换 Timeline 的事件和地点
+    timeline.replaceEvents(target.events, target.locations);
+
+    // 更新状态
+    this.currentChapterIndex = targetIndex;
+    this.chapterExhausted = false;
+
+    // 通知外部
+    this.config.onChapterTransition?.(current, target);
+
+    // 记录到 debug
+    const debug = useDebugStore.getState();
+    debug.pushError(`[章节切换] ${current.chapter} → ${target.chapter}`);
+
+    return true;
+  }
+
+  /** 获取当前章节索引（供外部查询） */
+  getCurrentChapterIndex(): number {
+    return this.currentChapterIndex;
   }
 
   private sleep(ms: number): Promise<void> {

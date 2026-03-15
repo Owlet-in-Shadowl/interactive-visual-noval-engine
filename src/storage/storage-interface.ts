@@ -30,10 +30,29 @@ export const LocationSchema = z.object({
   name: z.string(),
 });
 
+// ─── Branching / Gravity Schemas ──────────────────────
+
+export const BranchOptionSchema = z.object({
+  targetChapterId: z.string().describe('目标章节 ID'),
+  label: z.string().describe('编辑器可见标签，如"信任路线"'),
+  gravityKeywords: z.array(z.string()).describe('关键词引力：玩家文本命中这些词时加分'),
+  gravityDescription: z.string().describe('给 LLM 判定用的分支描述'),
+  weight: z.number().default(1.0).describe('初始权重/编剧偏好'),
+});
+
+export const DivergencePointSchema = z.object({
+  branches: z.array(BranchOptionSchema).min(2).describe('至少两个分支'),
+  maxFreeActions: z.number().default(5).describe('最多自由行动次数，超过则强制收束'),
+  defaultBranch: z.string().describe('超时或无法判定时的默认分支 chapter ID'),
+});
+
 export const ChapterDataSchema = z.object({
+  id: z.string().optional().describe('章节唯一 ID，缺省时由 normalizeChapters 自动分配'),
   chapter: z.string(),
   events: z.array(WorldEventSchema),
   locations: z.array(LocationSchema),
+  next: z.union([z.string(), DivergencePointSchema]).optional()
+    .describe('后继章节：string=线性跳转，DivergencePoint=分歧点，undefined=按数组顺序'),
 });
 
 // ─── Full Script Bundle Schema ─────────────────────────
@@ -50,6 +69,34 @@ export const ScriptBundleSchema = z.object({
 export type ScriptMetadata = z.infer<typeof ScriptMetadataSchema>;
 export type ChapterData = z.infer<typeof ChapterDataSchema>;
 export type ScriptBundle = z.infer<typeof ScriptBundleSchema>;
+export type BranchOption = z.infer<typeof BranchOptionSchema>;
+export type DivergencePoint = z.infer<typeof DivergencePointSchema>;
+
+// ─── Chapter Normalization ────────────────────────────
+
+/**
+ * 规格化章节数组：为缺少 id 的章节自动分配唯一 ID。
+ * 纯函数，不修改原数组。
+ */
+export function normalizeChapters(chapters: ChapterData[]): ChapterData[] {
+  const usedIds = new Set<string>();
+
+  // First pass: collect existing IDs
+  for (const ch of chapters) {
+    if (ch.id) usedIds.add(ch.id);
+  }
+
+  // Second pass: assign missing IDs
+  return chapters.map((ch, i) => {
+    if (ch.id) return ch;
+    let candidate = `chapter-${i}`;
+    while (usedIds.has(candidate)) {
+      candidate = `chapter-${i}-${Math.random().toString(36).slice(2, 6)}`;
+    }
+    usedIds.add(candidate);
+    return { ...ch, id: candidate };
+  });
+}
 
 // ─── Abstract Storage Interface ────────────────────────
 
