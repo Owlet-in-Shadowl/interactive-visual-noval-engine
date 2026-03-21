@@ -53,6 +53,8 @@ export class CoreLoop {
   private currentChapterIndex: number;
   private chapterExhausted = false;
   private director: IDirector;
+  /** Last Director output text — passed to next cycle to avoid repetition */
+  private lastDirectorSceneText: string = '';
   private divergence: {
     point: DivergencePoint;
     scores: Map<string, number>;
@@ -475,6 +477,11 @@ export class CoreLoop {
       timestamp: Date.now(),
     });
 
+    // Cache scene text for next cycle's Director context
+    this.lastDirectorSceneText = directorResult.scenes
+      .map((s) => [s.narration, s.speaker ? `${s.speaker}：${s.dialogue}` : s.dialogue].filter(Boolean).join(' '))
+      .join('\n');
+
     debug.setScenes(directorResult.scenes);
     this.config.onScenesReady(directorResult.scenes);
 
@@ -529,6 +536,11 @@ export class CoreLoop {
       outputTokens: directorResult.outputTokens,
       timestamp: Date.now(),
     });
+
+    // Cache scene text for next cycle's Director context
+    this.lastDirectorSceneText = directorResult.scenes
+      .map((s) => [s.narration, s.speaker ? `${s.speaker}：${s.dialogue}` : s.dialogue].filter(Boolean).join(' '))
+      .join('\n');
 
     // ⑥ Render
     debug.setPhase('render');
@@ -619,9 +631,7 @@ export class CoreLoop {
    * Build recent scene text for lorebook matching.
    */
   private getRecentSceneText(): string {
-    const debug = useDebugStore.getState();
-    const scenes = debug.currentScenes ?? [];
-    return scenes.map((s) => [s.dialogue, s.narration].filter(Boolean).join(' ')).join(' ');
+    return this.lastDirectorSceneText;
   }
 
   /**

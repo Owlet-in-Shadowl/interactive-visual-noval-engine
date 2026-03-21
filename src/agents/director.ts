@@ -65,6 +65,11 @@ export class SinglePovDirector implements IDirector {
       ? `\n\n⚡ 玩家介入："${input.playerMessage}"\n请在叙事中体现对玩家指令/对话的回应，角色的行动和对话应该反映出受到了这个输入的影响。`
       : '';
 
+    // Previous scene context — tells Director what just happened to avoid repetition
+    const previousSceneContext = input.recentSceneText
+      ? `\n\n## 前情（上一段叙事，不要重复这些内容，从这里自然接续）：\n${input.recentSceneText.slice(0, 500)}`
+      : '';
+
     // Build NPC context block
     const npcContext = input.npcPersonas && input.npcPersonas.length > 0
       ? '\n\n场景中的其他角色：\n' + input.npcPersonas.map((npc) =>
@@ -112,7 +117,7 @@ export class SinglePovDirector implements IDirector {
 - 背景：${input.characterPersona.background}${dialogueExamplesContext}${npcContext}${lorebookAfterPersona}
 
 当前目标：${input.currentGoal.what}
-原因：${input.currentGoal.why}${eventContext}${interruptContext}${playerContext}${lorebookBeforeScene}`;
+原因：${input.currentGoal.why}${eventContext}${interruptContext}${playerContext}${previousSceneContext}${lorebookBeforeScene}`;
 
     const { text, usage } = await generateText({
       model: getChatModel(),
