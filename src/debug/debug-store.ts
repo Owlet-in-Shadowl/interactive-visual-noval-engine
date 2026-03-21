@@ -26,6 +26,10 @@ export interface AgentTrace {
   inputTokens: number;
   outputTokens: number;
   timestamp: number;
+  /** Optional summary of what went in (truncated for display) */
+  inputSummary?: string;
+  /** Optional summary of what came out (truncated for display) */
+  outputSummary?: string;
 }
 
 export interface MemoryLog {

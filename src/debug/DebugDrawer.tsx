@@ -213,13 +213,25 @@ export function DebugDrawer() {
         <Section title="Agent Trace" section="traces" expanded={expandedSections.traces} toggle={toggle}>
           {state.traces.length > 0 ? (
             <div>
-              {state.traces.slice(-5).reverse().map((t, i) => (
-                <div key={i} style={styles.traceItem}>
-                  <span style={styles.traceAgent}>{t.agent}</span>
-                  <span style={styles.traceDuration}>{(t.duration / 1000).toFixed(1)}s</span>
-                  <span style={styles.traceTokens}>
-                    {t.inputTokens + t.outputTokens} tok
-                  </span>
+              {state.traces.slice(-8).reverse().map((t, i) => (
+                <div key={i} style={styles.traceEntry}>
+                  <div style={styles.traceItem}>
+                    <span style={styles.traceAgent}>{t.agent}</span>
+                    <span style={styles.traceDuration}>{(t.duration / 1000).toFixed(1)}s</span>
+                    <span style={styles.traceTokens}>
+                      {t.inputTokens + t.outputTokens} tok
+                    </span>
+                  </div>
+                  {t.inputSummary && (
+                    <div style={styles.traceSummary}>
+                      <span style={{ color: T.info }}>IN</span> {t.inputSummary}
+                    </div>
+                  )}
+                  {t.outputSummary && (
+                    <div style={styles.traceSummary}>
+                      <span style={{ color: T.success }}>OUT</span> {t.outputSummary}
+                    </div>
+                  )}
                 </div>
               ))}
               <div style={styles.traceTotal}>
@@ -431,9 +443,19 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
     padding: '2px 0',
   },
+  traceEntry: {
+    borderBottom: `1px solid ${T.border}`,
+    padding: '3px 0',
+  },
   traceAgent: { color: T.gold, flex: 1 },
   traceDuration: { color: T.success },
   traceTokens: { color: T.textTertiary },
+  traceSummary: {
+    fontSize: '10px',
+    color: T.textTertiary,
+    paddingLeft: '12px',
+    lineHeight: '1.4',
+  },
   traceTotal: { color: T.accent, marginTop: '4px', fontSize: '11px' },
   errorItem: {
     color: T.error,

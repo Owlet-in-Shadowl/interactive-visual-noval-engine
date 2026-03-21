@@ -217,6 +217,8 @@ export class CoreLoop {
       inputTokens: cognitionResult.inputTokens,
       outputTokens: cognitionResult.outputTokens,
       timestamp: Date.now(),
+      inputSummary: `记忆${assembled.metadata?.recalledMemories?.length ?? 0}条, ${assembled.estimatedTokens}tok`,
+      outputSummary: `${goal.what.slice(0, 40)}`,
     });
 
     // Store the goal
@@ -505,6 +507,8 @@ export class CoreLoop {
       inputTokens: directorResult.inputTokens,
       outputTokens: directorResult.outputTokens,
       timestamp: Date.now(),
+      inputSummary: `中断: ${event.name}`,
+      outputSummary: `${directorResult.scenes.length}场景`,
     });
 
     // Ingest into narrative memory
@@ -585,6 +589,8 @@ export class CoreLoop {
       inputTokens: directorResult.inputTokens,
       outputTokens: directorResult.outputTokens,
       timestamp: Date.now(),
+      inputSummary: `${action.name}: ${goal.what.slice(0, 30)}`,
+      outputSummary: `${directorResult.scenes.length}场景, ${directorResult.scenes.map((s) => s.speaker || '旁白').join('/')}`,
     });
 
     // Ingest into narrative memory (layer 1 window + auto-compress to layer 2)
