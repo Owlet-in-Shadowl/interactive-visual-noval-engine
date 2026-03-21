@@ -49,7 +49,14 @@
 | 40 | 角色面板显示所有角色（POV + NPC） | done | commit 18cade4 |
 | 41 | 编辑器点击章节自动展开（修复分歧详情可见性） | done | commit 0c26af7 |
 | 42 | Lorebook 世界书系统 | done | commit d50dd9c |
-| 43 | 「俺寻思」Phase 2：分歧决策点 + 主动提示 | pending | anchorLevel soft 事件 |
+| 43 | Mem0 Cloud 记忆模块 + 引擎切换 | done | commit c9e96a3 |
+| 44 | 记忆可观测性（Debug 面板记忆调用日志） | done | commit 94add25 |
+| 45 | 叙事记忆系统（NarrativeMemory 两层上下文） | done | commit 7a2f43f |
+| 46 | 第四章合流（钻石结构分支收敛） | done | seed.ts ch3a/ch3b → ch4 |
+| 47 | Director 前情注入（避免跨轮重复） | done | commit bbaa096 |
+| — | **以下为待做功能** | — | — |
+| 48 | cognition 行动去重（注入已完成 action 列表） | pending | 根因是 GOAP effects 不持久化 |
+| 49 | 「俺寻思」Phase 2：分歧决策点 + 主动提示 | pending | anchorLevel soft 事件 |
 | 44 | 引力评分模式验证（maxFreeActions>0） | pending | |
 | 45 | P0 修复：EDR 全局 Store 解耦 | pending | code-quality-audit.md |
 | 46 | P1 修复：runOneCycle 拆分 + ESE + OA | pending | code-quality-audit.md |
@@ -269,3 +276,44 @@
 2. ✅ CharacterPanel 重构：遍历所有角色，POV 标"主视角"徽标，NPC 显示基本信息
 3. ✅ EditorTree 点击章节自动展开子树（修复分歧详情不可见的 UX 问题）
 4. ✅ Lorebook 世界书系统：Schema + 匹配引擎 + Director 注入 + 5条内置条目
+
+### Session 18
+
+**Mem0 Cloud 记忆模块：**
+- Mem0ContextEngine 适配器实现（IFullContextEngine 完整接口）
+- ingest fire-and-forget 写入 Mem0 Cloud + 本地缓存
+- assemble 语义搜索 Mem0 召回相关记忆，fallback 本地
+- 设置界面：记忆模块下拉选择（内置/Mem0）+ API Key 配置
+- App.tsx 根据 memoryConfig.provider 动态创建引擎
+- 修复 API 端点（v2→v1），每局唯一 runId 隔离记忆
+
+**记忆可观测性：**
+- ObservableContextEngine 装饰器（已有）记录所有 CE 调用
+- DebugDrawer 新增"记忆调用日志"区块：方法名彩色区分 + IN/OUT 摘要
+- formatLogData 支持 string[] 展示（recalledItems）
+- 游戏启动时 debug.reset() 清除旧 session 日志
+
+**叙事记忆系统（NarrativeMemory）：**
+- 与 ContextEngine（角色记忆）平行的另一条记忆线
+- 层1 滑动窗口：最近 3 轮 Director 完整输出
+- 层2 摘要检索：窗口溢出自动压缩为摘要，关键词匹配检索
+- Director prompt 注入两层上下文："叙事历史回顾" + "最近叙事"
+- CoreLoop 集成：Director 输出后 ingest，调用前 assemble
+
+**Director 前情修复：**
+- CoreLoop 缓存 lastDirectorSceneText
+- Director prompt 注入"前情"区块避免相邻轮重复
+
+**第四章合流：**
+- seed.ts 新增第四章"追踪"（酒馆线索+抉择之夜）
+- ch3a/ch3b 的 next 都指向 builtin-ch4（钻石结构）
+
+**发现的问题（下个 session 待解决）：**
+- **cognition 目标跳跃**：cognition 每轮独立推理 5W1H，不知道"我刚做了什么"，导致重复规划同一行动（如连续两轮都去找赫尔曼）
+  - 快速修复：把最近 N 个已完成 action 注入 cognition prompt
+  - 正确修复：GOAP action effects 持久化到世界状态
+- **叙事记忆 vs 角色记忆概念区分**：已讨论清楚——角色记忆回答"角色知道什么"（服务 cognition），叙事记忆回答"读者看到了什么"（服务 director）
+
+**架构决策：**
+- AD-16: 叙事记忆（NarrativeMemory）与角色记忆（ContextEngine）平行——两种记忆服务不同消费者，可共享存储但用不同 query/注入位置
+- AD-17: Mem0 Cloud 作为可选记忆后端——纯前端直接调 REST API（CORS 允许），通过设置界面切换
