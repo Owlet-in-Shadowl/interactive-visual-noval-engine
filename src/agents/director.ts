@@ -17,6 +17,7 @@ import { SceneOutputSchema } from '../memory/schemas';
 import type { GOAPAction, Goal5W1H, CorePersona, WorldEvent, SceneOutput } from '../memory/schemas';
 import type { LorebookEntry } from '../storage/storage-interface';
 import { matchLorebook, buildLorebookContext } from '../engine/lorebook';
+import type { NarrativeContext } from '../memory/narrative-memory';
 
 // ─── Types ──────────────────────────────────────────
 
@@ -30,6 +31,7 @@ export interface DirectorInput {
   playerMessage?: string;
   lorebookEntries?: LorebookEntry[];
   recentSceneText?: string;
+  narrativeContext?: NarrativeContext;
 }
 
 export interface DirectorResult {
@@ -65,10 +67,27 @@ export class SinglePovDirector implements IDirector {
       ? `\n\n⚡ 玩家介入："${input.playerMessage}"\n请在叙事中体现对玩家指令/对话的回应，角色的行动和对话应该反映出受到了这个输入的影响。`
       : '';
 
-    // Previous scene context — tells Director what just happened to avoid repetition
-    const previousSceneContext = input.recentSceneText
-      ? `\n\n## 前情（上一段叙事，不要重复这些内容，从这里自然接续）：\n${input.recentSceneText.slice(0, 500)}`
-      : '';
+    // Narrative context — two layers of scene history for coherent storytelling
+    let narrativeHistoryBlock = '';
+    if (input.narrativeContext) {
+      const { recentScenesText, recalledSummaries } = input.narrativeContext;
+
+      // Layer 2: recalled historical summaries (far-range callbacks)
+      if (recalledSummaries.length > 0) {
+        const summaryLines = recalledSummaries
+          .map((s) => `- [${s.chapter}/${s.action}] ${s.summary}`)
+          .join('\n');
+        narrativeHistoryBlock += `\n\n## 叙事历史回顾（早期相关场景摘要，可用于伏笔回调）：\n${summaryLines}`;
+      }
+
+      // Layer 1: recent scenes window (short-range continuity)
+      if (recentScenesText) {
+        narrativeHistoryBlock += `\n\n## 最近叙事（不要重复这些内容，从这里自然接续）：\n${recentScenesText.slice(0, 800)}`;
+      }
+    } else if (input.recentSceneText) {
+      // Fallback to old single-string mode
+      narrativeHistoryBlock = `\n\n## 前情（上一段叙事，不要重复这些内容，从这里自然接续）：\n${input.recentSceneText.slice(0, 500)}`;
+    }
 
     // Build NPC context block
     const npcContext = input.npcPersonas && input.npcPersonas.length > 0
@@ -117,7 +136,7 @@ export class SinglePovDirector implements IDirector {
 - 背景：${input.characterPersona.background}${dialogueExamplesContext}${npcContext}${lorebookAfterPersona}
 
 当前目标：${input.currentGoal.what}
-原因：${input.currentGoal.why}${eventContext}${interruptContext}${playerContext}${previousSceneContext}${lorebookBeforeScene}`;
+原因：${input.currentGoal.why}${eventContext}${interruptContext}${playerContext}${narrativeHistoryBlock}${lorebookBeforeScene}`;
 
     const { text, usage } = await generateText({
       model: getChatModel(),

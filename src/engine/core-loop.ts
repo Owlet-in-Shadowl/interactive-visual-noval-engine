@@ -29,6 +29,7 @@ import type { GOAPAction, SceneOutput, WorldEvent, Goal5W1H, EpisodicMemory } fr
 import type { ChapterData, DivergencePoint, LorebookEntry } from '../storage/storage-interface';
 import { scoreText, accumulateScores, resolveGravity, initScores } from './gravity';
 import { framesToScenes, projectAllMemories } from '../pf';
+import { NarrativeMemory } from '../memory/narrative-memory';
 
 export interface CoreLoopConfig {
   characterId: string;
@@ -53,7 +54,8 @@ export class CoreLoop {
   private currentChapterIndex: number;
   private chapterExhausted = false;
   private director: IDirector;
-  /** Last Director output text — passed to next cycle to avoid repetition */
+  private narrativeMemory: NarrativeMemory;
+  /** Last Director output text — fallback for recentSceneText when narrativeContext not available */
   private lastDirectorSceneText: string = '';
   private divergence: {
     point: DivergencePoint;
@@ -66,6 +68,10 @@ export class CoreLoop {
     this.sessionId = `novel:${config.characterId}`;
     this.currentChapterIndex = config.initialChapterIndex ?? 0;
     this.director = config.director ?? new SinglePovDirector();
+    this.narrativeMemory = new NarrativeMemory();
+    // Set initial chapter name
+    const initialChapter = config.chapters[this.currentChapterIndex];
+    if (initialChapter) this.narrativeMemory.setChapter(initialChapter.chapter);
   }
 
   async start() {
@@ -448,25 +454,29 @@ export class CoreLoop {
     const npcPersonas = this.gatherNpcPersonas();
 
     // Generate narrative for the interruption
+    const interruptAction = {
+      id: 'interrupted',
+      name: '被突发事件打断',
+      preconditions: {},
+      effects: {},
+      cost: 0,
+      timeCost: 0,
+      description: `${event.name}：${event.description}`,
+    };
+    const narrativeContext = this.narrativeMemory.assemble(interruptAction.description);
+
     debug.setPhase('director');
     const directorResult = await this.director.generateScenes({
       characterPersona: persona,
       npcPersonas,
       currentGoal: goal,
-      action: {
-        id: 'interrupted',
-        name: '被突发事件打断',
-        preconditions: {},
-        effects: {},
-        cost: 0,
-        timeCost: 0,
-        description: `${event.name}：${event.description}`,
-      },
+      action: interruptAction,
       worldEvent: event,
       interrupted: true,
       playerMessage: playerMessage ?? undefined,
       lorebookEntries: this.config.lorebookEntries,
       recentSceneText: this.getRecentSceneText(),
+      narrativeContext,
     });
 
     debug.pushTrace({
@@ -477,7 +487,10 @@ export class CoreLoop {
       timestamp: Date.now(),
     });
 
-    // Cache scene text for next cycle's Director context
+    // Ingest into narrative memory
+    this.narrativeMemory.ingest(directorResult.scenes, interruptAction.name);
+
+    // Cache scene text for fallback
     this.lastDirectorSceneText = directorResult.scenes
       .map((s) => [s.narration, s.speaker ? `${s.speaker}：${s.dialogue}` : s.dialogue].filter(Boolean).join(' '))
       .join('\n');
@@ -512,8 +525,9 @@ export class CoreLoop {
     const debug = useDebugStore.getState();
     const { contextEngine } = this.config;
 
-    // Gather NPC personas for director
+    // Gather NPC personas and narrative context for director
     const npcPersonas = this.gatherNpcPersonas();
+    const narrativeContext = this.narrativeMemory.assemble(action.description);
 
     // ⑤ Director Agent: narrative generation
     debug.setPhase('director');
@@ -527,6 +541,7 @@ export class CoreLoop {
       playerMessage: playerMessage ?? undefined,
       lorebookEntries: this.config.lorebookEntries,
       recentSceneText: this.getRecentSceneText(),
+      narrativeContext,
     });
 
     debug.pushTrace({
@@ -537,7 +552,10 @@ export class CoreLoop {
       timestamp: Date.now(),
     });
 
-    // Cache scene text for next cycle's Director context
+    // Ingest into narrative memory (layer 1 window + auto-compress to layer 2)
+    this.narrativeMemory.ingest(directorResult.scenes, action.name);
+
+    // Cache scene text for fallback
     this.lastDirectorSceneText = directorResult.scenes
       .map((s) => [s.narration, s.speaker ? `${s.speaker}：${s.dialogue}` : s.dialogue].filter(Boolean).join(' '))
       .join('\n');
@@ -799,6 +817,7 @@ export class CoreLoop {
     // 更新状态
     this.currentChapterIndex = targetIndex;
     this.chapterExhausted = false;
+    this.narrativeMemory.setChapter(target.chapter);
 
     // 通知外部
     this.config.onChapterTransition?.(current, target);
