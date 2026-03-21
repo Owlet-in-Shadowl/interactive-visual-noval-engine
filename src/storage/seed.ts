@@ -51,6 +51,28 @@ const ch3aEvents: WorldEvent[] = [
   },
 ];
 
+// 第四章：合流（两条分支都通向这里）
+const ch4Events: WorldEvent[] = [
+  {
+    id: 'tavern-clue',
+    time: 1020,
+    name: '酒馆的线索',
+    description: '莉娅来到旅人酒馆打听"克洛维斯·莫兰"这个名字。酒馆老板犹豫了一下，说此人三天前刚经过小镇，住了一晚就走了，留下了一封没有署名的信——信封上印着王城大法官的火漆。',
+    location: 'tavern',
+    affectedCharacters: ['liya'],
+    severity: 'major',
+  },
+  {
+    id: 'night-decision',
+    time: 1080,
+    name: '抉择之夜',
+    description: '宵禁的钟声敲响。莉娅站在酒馆门口，手中攥着那封信。信中提到了一个日期——三天后，王城将举行一场秘密听证会，与艾文斯家族案件有关。留在小镇意味着安全但可能永远错过真相；追踪莫兰意味着踏上危险的旅途。',
+    location: 'tavern',
+    affectedCharacters: ['liya', 'guard-captain'],
+    severity: 'critical',
+  },
+];
+
 const ch3bEvents: WorldEvent[] = [
   {
     id: 'escort-herman',
@@ -111,11 +133,19 @@ const builtinChapters: ChapterData[] = [
     chapter: '第三章：灰烬之下',
     events: ch3aEvents,
     locations: allLocations,
+    next: 'builtin-ch4',
   },
   {
     id: 'builtin-ch3b',
     chapter: '第三章：夜行',
     events: ch3bEvents,
+    locations: allLocations,
+    next: 'builtin-ch4',
+  },
+  {
+    id: 'builtin-ch4',
+    chapter: '第四章：追踪',
+    events: ch4Events,
     locations: allLocations,
   },
 ];
@@ -185,6 +215,16 @@ const builtinLorebook: LorebookEntry[] = [
     position: 'before_scene',
     enabled: true,
     constant: false,
+  },
+  {
+    id: 'lore-clovis-moran',
+    keys: ['克洛维斯', '莫兰', 'Clovis'],
+    content: '克洛维斯·莫兰是王城大法官的首席顾问，十五年前主导了对艾文斯家族的调查。民间传言他伪造了关键证据。近年来他频繁出现在各地边境小镇，行踪诡秘，似乎在销毁某些旧档案。',
+    priority: 9,
+    position: 'after_persona',
+    enabled: true,
+    constant: false,
+    selective: false,
   },
   {
     id: 'lore-guard-patrol',
