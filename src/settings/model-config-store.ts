@@ -7,6 +7,7 @@
 import { create } from 'zustand';
 
 export type ModelProtocol = 'openai' | 'anthropic' | 'gemini' | 'deepseek';
+export type MemoryProvider = 'builtin' | 'mem0';
 
 export interface ModelConfig {
   protocol: ModelProtocol;
@@ -15,13 +16,20 @@ export interface ModelConfig {
   modelName: string;
 }
 
+export interface MemoryConfig {
+  provider: MemoryProvider;
+  mem0ApiKey: string;
+}
+
 export interface ModelConfigState {
   chatModel: ModelConfig;
   embeddingModel: ModelConfig;
+  memoryConfig: MemoryConfig;
   initialized: boolean;
 
   setChatModel: (config: Partial<ModelConfig>) => void;
   setEmbeddingModel: (config: Partial<ModelConfig>) => void;
+  setMemoryConfig: (config: Partial<MemoryConfig>) => void;
   init: () => void;
   save: () => void;
 }
@@ -70,9 +78,14 @@ function createDefaultEmbeddingModel(): ModelConfig {
   };
 }
 
+function createDefaultMemoryConfig(): MemoryConfig {
+  return { provider: 'builtin', mem0ApiKey: '' };
+}
+
 export const useModelConfigStore = create<ModelConfigState>()((set, get) => ({
   chatModel: createDefaultChatModel(),
   embeddingModel: createDefaultEmbeddingModel(),
+  memoryConfig: createDefaultMemoryConfig(),
   initialized: false,
 
   setChatModel: (config) => {
@@ -84,6 +97,12 @@ export const useModelConfigStore = create<ModelConfigState>()((set, get) => ({
   setEmbeddingModel: (config) => {
     set((s) => ({
       embeddingModel: { ...s.embeddingModel, ...config },
+    }));
+  },
+
+  setMemoryConfig: (config) => {
+    set((s) => ({
+      memoryConfig: { ...s.memoryConfig, ...config },
     }));
   },
 
@@ -108,7 +127,12 @@ export const useModelConfigStore = create<ModelConfigState>()((set, get) => ({
         if (!chatModel.apiKey && envKey) chatModel.apiKey = envKey;
         if (!embeddingModel.apiKey && envKey) embeddingModel.apiKey = envKey;
 
-        set({ chatModel, embeddingModel, initialized: true });
+        const memoryConfig: MemoryConfig = {
+          ...createDefaultMemoryConfig(),
+          ...parsed.memoryConfig,
+        };
+
+        set({ chatModel, embeddingModel, memoryConfig, initialized: true });
       } else {
         set({ initialized: true });
       }
@@ -118,7 +142,7 @@ export const useModelConfigStore = create<ModelConfigState>()((set, get) => ({
   },
 
   save: () => {
-    const { chatModel, embeddingModel } = get();
+    const { chatModel, embeddingModel, memoryConfig } = get();
     // Don't persist api keys from env to localStorage (security)
     const envKey = getEnvApiKey();
     const chatToSave = { ...chatModel };
@@ -130,7 +154,7 @@ export const useModelConfigStore = create<ModelConfigState>()((set, get) => ({
 
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ chatModel: chatToSave, embeddingModel: embeddingToSave }),
+      JSON.stringify({ chatModel: chatToSave, embeddingModel: embeddingToSave, memoryConfig }),
     );
   },
 }));

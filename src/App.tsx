@@ -13,6 +13,7 @@ import { SettingsScreen } from './settings/SettingsScreen';
 import { CoreLoop } from './engine/core-loop';
 import { NovelContextEngine } from './memory/context-engine';
 import type { IFullContextEngine } from './memory/context-engine';
+import { Mem0ContextEngine } from './memory/mem0-context-engine';
 import { ObservableContextEngine } from './memory/observable-context-engine';
 import { useCharacterStore } from './memory/character-store';
 import { useDebugStore } from './debug/debug-store';
@@ -82,15 +83,25 @@ export function App() {
     );
     timelineRef.current = timeline;
 
-    const rawEngine = new NovelContextEngine(() =>
-      timeline.buildWorldState(
-        'home',
-        script.characters.slice(1).map((c) => c.core.id), // NPCs = all characters except first
-        timeline.getActiveEvents().length > 0
-          ? timeline.getActiveEvents().map((e) => e.description).join('；')
-          : `${timeline.formatTime()}，一切平静。`,
-      ),
+    const getWorldState = () => timeline.buildWorldState(
+      'home',
+      script.characters.slice(1).map((c) => c.core.id),
+      timeline.getActiveEvents().length > 0
+        ? timeline.getActiveEvents().map((e) => e.description).join('；')
+        : `${timeline.formatTime()}，一切平静。`,
     );
+
+    // Create memory engine based on config
+    const memConfig = useModelConfigStore.getState().memoryConfig;
+    let rawEngine: IFullContextEngine;
+    if (memConfig.provider === 'mem0' && memConfig.mem0ApiKey) {
+      const userId = `novel-${script.metadata.id}-${script.characters[0].core.id}`;
+      rawEngine = new Mem0ContextEngine(memConfig.mem0ApiKey, userId, getWorldState);
+      debug.pushError(`[记忆模块] 使用 Mem0 Cloud (user: ${userId})`);
+    } else {
+      rawEngine = new NovelContextEngine(getWorldState);
+      debug.pushError(`[记忆模块] 使用内置引擎`);
+    }
     const contextEngine = new ObservableContextEngine(rawEngine);
     contextEngineRef.current = contextEngine;
 
