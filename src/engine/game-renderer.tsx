@@ -24,8 +24,9 @@ import { T } from '../theme';
 import {
   Smile, Frown, Angry,
   AlertCircle, Eye, Flame, Brain, MessageCircle,
-  GitBranch, Loader2,
+  GitBranch, Loader2, Code2, ChevronDown, ChevronRight,
 } from 'lucide-react';
+import { useDebugStore } from '../debug/debug-store';
 import type { ComponentType } from 'react';
 import type { LucideProps } from 'lucide-react';
 
@@ -91,23 +92,45 @@ export function GameRenderer({
   const [currentScene, setCurrentScene] = useState<SceneOutput | null>(null);
   const historyRef = useRef<HTMLDivElement>(null);
   const lastScenesRef = useRef<SceneOutput[]>([]);
+  // No extra state needed — prompt markers are inserted as special SceneOutput entries in history
 
   const autoAdvance = usePlayerStore((s) => s.autoAdvance);
   const thinking = usePlayerStore((s) => s.thinking);
   const activeDivergence = usePlayerStore((s) => s.activeDivergence);
   const branchDescriptions = usePlayerStore((s) => s.branchDescriptions);
+  const debugCollapsed = useDebugStore((s) => s.phase === 'idle' ? false : true); // always track
+  const lastDirectorPrompt = useDebugStore((s) => s.lastDirectorPrompt);
 
   // When new scenes arrive from core-loop, enqueue them
+  // If debug panel is open, prepend a prompt marker scene
   useEffect(() => {
     if (scenes.length === 0 || scenes === lastScenesRef.current) return;
     lastScenesRef.current = scenes;
-    setQueue((q) => [...q, ...scenes]);
+    const prompt = lastDirectorPrompt;
+    if (prompt) {
+      // Insert a special "prompt marker" as the first item in this batch
+      const promptMarker: SceneOutput = {
+        speaker: null,
+        dialogue: prompt,
+        type: 'debug-prompt' as SceneOutput['type'],
+      };
+      setQueue((q) => [...q, promptMarker, ...scenes]);
+    } else {
+      setQueue((q) => [...q, ...scenes]);
+    }
   }, [scenes]);
 
   // Dequeue: when no scene is currently displayed, take the next from queue
+  // Debug-prompt markers go straight to history (not displayed as scenes)
   useEffect(() => {
     if (currentScene || queue.length === 0) return;
     const [next, ...rest] = queue;
+    if ((next.type as string) === 'debug-prompt') {
+      // Auto-advance prompt markers to history without displaying
+      setHistory((h) => [...h, next]);
+      setQueue(rest);
+      return;
+    }
     setCurrentScene(next);
     setQueue(rest);
   }, [currentScene, queue]);
@@ -468,10 +491,38 @@ export function GameRenderer({
 
 // ─── History entry sub-component ────────────────────────────
 
+function DebugPromptEntry({ prompt }: { prompt: string }) {
+  const [expanded, setExpanded] = useState(false);
+  // Only show when debug panel exists (always render but check debug state)
+  const phase = useDebugStore((s) => s.phase);
+  if (!phase) return null;
+
+  return (
+    <div
+      style={styles.debugPromptEntry}
+      onClick={() => setExpanded(!expanded)}
+    >
+      <div style={styles.debugPromptHeader}>
+        {expanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+        <Code2 size={10} />
+        <span>Director Prompt</span>
+      </div>
+      {expanded && (
+        <pre style={styles.debugPromptContent}>{prompt}</pre>
+      )}
+    </div>
+  );
+}
+
 function HistoryEntry({ scene }: { scene: SceneOutput }) {
   const text = scene.dialogue || scene.narration || '';
   const isThought = scene.type === 'thought';
   const isPlayerInput = scene.type === 'player-input';
+  const isDebugPrompt = (scene.type as string) === 'debug-prompt';
+
+  if (isDebugPrompt) {
+    return <DebugPromptEntry prompt={text} />;
+  }
 
   if (isPlayerInput) {
     return (
@@ -719,6 +770,40 @@ const styles: Record<string, React.CSSProperties> = {
     fontStyle: 'italic',
     fontSize: '14px',
     margin: 0,
+  },
+  // ─── Debug prompt styles ──────────────
+  debugPromptEntry: {
+    margin: '8px 0',
+    padding: '4px 8px',
+    background: `color-mix(in srgb, ${T.bg} 80%, ${T.info} 20%)`,
+    borderRadius: T.radius,
+    border: `1px solid ${T.info}`,
+    opacity: 0.6,
+    cursor: 'pointer',
+    fontSize: '10px',
+    fontFamily: T.fontMono,
+    color: T.textTertiary,
+  },
+  debugPromptHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    color: T.info,
+    fontWeight: 500,
+    userSelect: 'none' as const,
+  },
+  debugPromptContent: {
+    margin: '6px 0 2px',
+    padding: '6px',
+    background: T.bg,
+    borderRadius: T.radius,
+    fontSize: '9px',
+    lineHeight: '1.5',
+    whiteSpace: 'pre-wrap' as const,
+    wordBreak: 'break-all' as const,
+    maxHeight: '300px',
+    overflowY: 'auto' as const,
+    color: T.textTertiary,
   },
   // ─── Choice panel styles ─────────────
   choicePanel: {

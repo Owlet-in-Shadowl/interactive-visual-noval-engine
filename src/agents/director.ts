@@ -39,6 +39,8 @@ export interface DirectorResult {
   inputTokens: number;
   outputTokens: number;
   durationMs: number;
+  /** The full system prompt sent to LLM (for debug display) */
+  systemPrompt?: string;
 }
 
 // ─── Interface ──────────────────────────────────────
@@ -177,6 +179,7 @@ export class SinglePovDirector implements IDirector {
       inputTokens: usage?.inputTokens ?? 0,
       outputTokens: usage?.outputTokens ?? 0,
       durationMs,
+      systemPrompt: system,
     };
   }
 }

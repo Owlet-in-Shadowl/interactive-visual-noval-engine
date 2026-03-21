@@ -42,6 +42,9 @@ export interface MemoryLog {
 }
 
 export interface DebugState {
+  /** Latest Director system prompt (for inline debug in GameRenderer) */
+  lastDirectorPrompt: string;
+
   // Core loop phase
   phase: GamePhase;
   prevPhase: GamePhase;
@@ -96,6 +99,7 @@ export interface DebugState {
   setTimeline: (tl: DebugState['timeline']) => void;
   pushTrace: (trace: AgentTrace) => void;
   setScenes: (scenes: SceneOutput[]) => void;
+  setLastDirectorPrompt: (prompt: string) => void;
   pushError: (message: string) => void;
   pushMemoryLog: (log: MemoryLog) => void;
   incrementLoop: () => void;
@@ -105,6 +109,7 @@ export interface DebugState {
 export const useDebugStore = create<DebugState>()((set) => ({
   phase: 'idle',
   prevPhase: 'idle',
+  lastDirectorPrompt: '',
   phaseStartedAt: 0,
   phaseDurations: {},
   loopCount: 0,
@@ -153,6 +158,7 @@ export const useDebugStore = create<DebugState>()((set) => ({
     set((s) => ({ traces: [...s.traces.slice(-19), trace] })),
 
   setScenes: (scenes) => set({ currentScenes: scenes }),
+  setLastDirectorPrompt: (prompt) => set({ lastDirectorPrompt: prompt }),
 
   pushError: (message) =>
     set((s) => ({
@@ -182,5 +188,6 @@ export const useDebugStore = create<DebugState>()((set) => ({
       currentScenes: [],
       errors: [],
       memoryLogs: [],
+      lastDirectorPrompt: '',
     }),
 }));

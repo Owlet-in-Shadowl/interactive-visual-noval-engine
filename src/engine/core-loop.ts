@@ -593,6 +593,11 @@ export class CoreLoop {
       outputSummary: `${directorResult.scenes.length}场景, ${directorResult.scenes.map((s) => s.speaker || '旁白').join('/')}`,
     });
 
+    // Store Director prompt for inline debug display
+    if (directorResult.systemPrompt) {
+      debug.setLastDirectorPrompt(directorResult.systemPrompt);
+    }
+
     // Ingest into narrative memory (layer 1 window + auto-compress to layer 2)
     this.narrativeMemory.ingest(directorResult.scenes, action.name);
     debug.pushMemoryLog({
