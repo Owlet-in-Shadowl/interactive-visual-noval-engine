@@ -143,8 +143,10 @@ export function DebugDrawer() {
                 const time = new Date(log.timestamp).toLocaleTimeString('zh-CN', { hour12: false });
                 const methodColor = log.error ? T.error
                   : log.method === 'assemble' ? T.gold
+                  : log.method === 'narrative.assemble' ? T.gold
                   : log.method === 'recallMemories' ? T.info
                   : log.method === 'ingest' ? T.success
+                  : log.method === 'narrative.ingest' ? T.accent
                   : T.textSecondary;
                 return (
                   <div key={i} style={styles.memLogEntry}>

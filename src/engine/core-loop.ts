@@ -477,6 +477,13 @@ export class CoreLoop {
       description: `${event.name}：${event.description}`,
     };
     const narrativeContext = this.narrativeMemory.assemble(interruptAction.description);
+    debug.pushMemoryLog({
+      method: 'narrative.assemble',
+      timestamp: Date.now(),
+      durationMs: 0,
+      input: { query: interruptAction.description.slice(0, 80) },
+      output: { windowSize: this.narrativeMemory.getStats().windowSize, recalledSummaries: narrativeContext.recalledSummaries.length },
+    });
 
     debug.setPhase('director');
     const directorResult = await this.director.generateScenes({
@@ -502,6 +509,13 @@ export class CoreLoop {
 
     // Ingest into narrative memory
     this.narrativeMemory.ingest(directorResult.scenes, interruptAction.name);
+    debug.pushMemoryLog({
+      method: 'narrative.ingest',
+      timestamp: Date.now(),
+      durationMs: 0,
+      input: { action: interruptAction.name, sceneCount: directorResult.scenes.length },
+      output: this.narrativeMemory.getStats(),
+    });
 
     // Cache scene text for fallback
     this.lastDirectorSceneText = directorResult.scenes
@@ -541,6 +555,14 @@ export class CoreLoop {
     // Gather NPC personas and narrative context for director
     const npcPersonas = this.gatherNpcPersonas();
     const narrativeContext = this.narrativeMemory.assemble(action.description);
+    const nmStats = this.narrativeMemory.getStats();
+    debug.pushMemoryLog({
+      method: 'narrative.assemble',
+      timestamp: Date.now(),
+      durationMs: 0,
+      input: { query: action.description.slice(0, 80) },
+      output: { windowSize: nmStats.windowSize, summaryCount: nmStats.summaryCount, recalledSummaries: narrativeContext.recalledSummaries.length, recentChars: narrativeContext.recentScenesText.length },
+    });
 
     // ⑤ Director Agent: narrative generation
     debug.setPhase('director');
@@ -567,6 +589,13 @@ export class CoreLoop {
 
     // Ingest into narrative memory (layer 1 window + auto-compress to layer 2)
     this.narrativeMemory.ingest(directorResult.scenes, action.name);
+    debug.pushMemoryLog({
+      method: 'narrative.ingest',
+      timestamp: Date.now(),
+      durationMs: 0,
+      input: { action: action.name, sceneCount: directorResult.scenes.length },
+      output: this.narrativeMemory.getStats(),
+    });
 
     // Cache scene text for fallback
     this.lastDirectorSceneText = directorResult.scenes
