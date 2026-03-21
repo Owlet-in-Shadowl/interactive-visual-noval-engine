@@ -12,6 +12,8 @@ import { CharacterPanel } from './player/CharacterPanel';
 import { SettingsScreen } from './settings/SettingsScreen';
 import { CoreLoop } from './engine/core-loop';
 import { NovelContextEngine } from './memory/context-engine';
+import type { IFullContextEngine } from './memory/context-engine';
+import { ObservableContextEngine } from './memory/observable-context-engine';
 import { useCharacterStore } from './memory/character-store';
 import { useDebugStore } from './debug/debug-store';
 import { usePlayerStore } from './player/player-store';
@@ -34,7 +36,7 @@ export function App() {
   const [activeGoapActions, setActiveGoapActions] = useState<GOAPAction[]>([]);
   const coreLoopRef = useRef<CoreLoop | null>(null);
   const timelineRef = useRef<Timeline | null>(null);
-  const contextEngineRef = useRef<NovelContextEngine | null>(null);
+  const contextEngineRef = useRef<IFullContextEngine | null>(null);
 
   const resetCharacters = useCharacterStore((s) => s.resetAll);
   const initCharacter = useCharacterStore((s) => s.initCharacter);
@@ -80,7 +82,7 @@ export function App() {
     );
     timelineRef.current = timeline;
 
-    const contextEngine = new NovelContextEngine(() =>
+    const rawEngine = new NovelContextEngine(() =>
       timeline.buildWorldState(
         'home',
         script.characters.slice(1).map((c) => c.core.id), // NPCs = all characters except first
@@ -89,6 +91,7 @@ export function App() {
           : `${timeline.formatTime()}，一切平静。`,
       ),
     );
+    const contextEngine = new ObservableContextEngine(rawEngine);
     contextEngineRef.current = contextEngine;
 
     const primaryCharId = script.characters[0].core.id;

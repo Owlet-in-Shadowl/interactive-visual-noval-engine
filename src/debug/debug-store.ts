@@ -28,6 +28,15 @@ export interface AgentTrace {
   timestamp: number;
 }
 
+export interface MemoryLog {
+  method: string;
+  timestamp: number;
+  durationMs: number;
+  input: unknown;
+  output: unknown;
+  error?: string;
+}
+
 export interface DebugState {
   // Core loop phase
   phase: GamePhase;
@@ -71,6 +80,9 @@ export interface DebugState {
   // Error log
   errors: Array<{ message: string; timestamp: number }>;
 
+  // Memory module logs (ContextEngine observability)
+  memoryLogs: MemoryLog[];
+
   // Actions
   setPhase: (phase: GamePhase) => void;
   setCurrentGoal: (goal: Goal5W1H, rawJson: string) => void;
@@ -81,6 +93,7 @@ export interface DebugState {
   pushTrace: (trace: AgentTrace) => void;
   setScenes: (scenes: SceneOutput[]) => void;
   pushError: (message: string) => void;
+  pushMemoryLog: (log: MemoryLog) => void;
   incrementLoop: () => void;
   reset: () => void;
 }
@@ -100,6 +113,7 @@ export const useDebugStore = create<DebugState>()((set) => ({
   traces: [],
   currentScenes: [],
   errors: [],
+  memoryLogs: [],
 
   setPhase: (phase) =>
     set((s) => {
@@ -142,6 +156,9 @@ export const useDebugStore = create<DebugState>()((set) => ({
       phase: 'error' as GamePhase,
     })),
 
+  pushMemoryLog: (log) =>
+    set((s) => ({ memoryLogs: [...s.memoryLogs.slice(-49), log] })),
+
   incrementLoop: () =>
     set((s) => ({ loopCount: s.loopCount + 1, phaseDurations: {} })),
 
@@ -160,5 +177,6 @@ export const useDebugStore = create<DebugState>()((set) => ({
       traces: [],
       currentScenes: [],
       errors: [],
+      memoryLogs: [],
     }),
 }));
