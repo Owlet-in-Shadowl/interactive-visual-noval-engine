@@ -57,7 +57,7 @@ export function EditorTree() {
                   'flex items-center gap-1.5 w-full px-2 py-1 rounded-md text-left hover:bg-accent/50 transition-colors',
                   selectedNode === chId && 'bg-accent text-accent-foreground',
                 )}
-                onClick={() => selectNode(chId)}
+                onClick={() => { selectNode(chId); if (!chExpanded) toggleExpand(chId); }}
                 onDoubleClick={() => toggleExpand(chId)}
               >
                 <span
