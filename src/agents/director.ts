@@ -77,12 +77,18 @@ export class SinglePovDirector implements IDirector {
     }
     const speakerHint = allSpeakerIds.map((id) => `"${id}"`).join('、');
 
+    // Build dialogue examples block (fewshot for speech style control)
+    const dialogueExamplesContext = input.characterPersona.dialogueExamples?.length
+      ? '\n\n对话示例（请参考这些示例的风格和频率，不要每句都引用古籍或使用特殊修辞）：\n' +
+        input.characterPersona.dialogueExamples.map((ex) => `  「${ex}」`).join('\n')
+      : '';
+
     const system = `你是一位互动小说的叙事导演。你需要将角色的机械动作翻译为富有文学性的对话和环境描写。
 
 主视角角色：
 - 名字：${input.characterPersona.name}（ID: ${input.characterPersona.id}）
 - 说话风格：${input.characterPersona.speechStyle}
-- 背景：${input.characterPersona.background}${npcContext}
+- 背景：${input.characterPersona.background}${dialogueExamplesContext}${npcContext}
 
 当前目标：${input.currentGoal.what}
 原因：${input.currentGoal.why}${eventContext}${interruptContext}${playerContext}`;

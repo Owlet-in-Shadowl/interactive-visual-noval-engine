@@ -16,6 +16,8 @@ export const CorePersonaSchema = z.object({
   values: z.array(z.string()),
   speechStyle: z.string(),
   appearance: z.string().optional(),
+  dialogueExamples: z.array(z.string()).optional()
+    .describe('角色对话示例（fewshot），控制说话风格的频率和质感。包含正例（典型对话）和反例（不应出现的风格）'),
 });
 
 export const PersonaShiftSchema = z.object({
