@@ -40,13 +40,20 @@
 | 32 | 「俺寻思」系统 — 思考 Agent + 内心独白渲染 | done | agents/thinking.ts |
 | 33 | 底栏重写（AUTO + 输入框，替代自主/介入模式） | done | ChatInput Tailwind 重写 |
 | 34 | GameRenderer AUTO 模式 + thought 样式 | done | 蓝灰斜体 + 左边框 |
+| 35 | 思考系统优化（POV判定+thinking禁止点击+AUTO细化） | done | commit 45ab388 |
+| 36 | 章节级分支系统（引力机制+编辑器支持） | done | commit 9621d60 |
+| 37 | 分支 Demo 端到端（选项UI+LLM描述+4章节拆分） | done | commit 2470237 |
+| 38 | Director 接口抽象（IDirector+SinglePovDirector+NPC注入） | done | commit 2470237 |
 | — | **以下为待做功能** | — | — |
-| 35 | 「俺寻思」Phase 2：分歧决策点 + 主动提示 | pending | anchorLevel soft 事件 |
-| 36 | 引力机制（NPC 自主行为拉回预置分支） | pending | 修正方案.md P1 |
-| 37 | P0 修复：EDR 全局 Store 解耦 | pending | code-quality-audit.md |
-| 38 | P1 修复：runOneCycle 拆分 + ESE + OA | pending | code-quality-audit.md |
-| 39 | 剧本导入验证（上传时 schema 校验 + 错误提示） | pending | |
-| 40 | 多章节切换（chapter selector UI） | pending | |
+| 39 | CorePersona 加 dialogueExamples（fewshot 控制说话频率） | pending | 借鉴 ST mes_example |
+| 40 | 角色面板显示所有角色（不仅 POV） | pending | CharacterPanel 改为遍历全部 |
+| 41 | 编辑器分歧详情显示修复 | pending | 选中有分歧的章节时右侧不显示分支配置 |
+| 42 | Lorebook 世界书系统 | pending | ScriptBundle 加 lorebook 字段，关键词触发注入上下文 |
+| 43 | 「俺寻思」Phase 2：分歧决策点 + 主动提示 | pending | anchorLevel soft 事件 |
+| 44 | 引力评分模式验证（maxFreeActions>0） | pending | |
+| 45 | P0 修复：EDR 全局 Store 解耦 | pending | code-quality-audit.md |
+| 46 | P1 修复：runOneCycle 拆分 + ESE + OA | pending | code-quality-audit.md |
+| 47 | 剧本导入验证（上传时 schema 校验 + 错误提示） | pending | |
 | 41 | 存档/读档功能 | pending | |
 | 42 | 角色立绘/头像系统 | pending | |
 | 43 | 背景图/场景图系统 | pending | |
@@ -116,6 +123,21 @@
 - **决定**: 底栏从"自主运行/介入模式"改为传统 VN 的 AUTO toggle + 输入框
 - **原因**: 预置剧本优先模型下，"自主/介入"是 AI 沙盒概念，不再适用。AUTO 更符合 VN 玩家心智模型
 - **影响**: ChatInput 用 Tailwind 重写，旧的 mode/autoPause/dynamicGoap 状态保留但不暴露到 UI
+
+### AD-13: 章节级分支（不在事件级）
+- **决定**: 分歧点在章节边界发生，不在事件中间
+- **原因**: 参照 Ink/ChoiceScript 的经典模型，章节是天然叙事单元，编剧心智模型清晰
+- **影响**: ChapterData.next 可以是 string（线性）或 DivergencePoint（分歧）
+
+### AD-14: Director 层接口抽象
+- **决定**: runDirector 裸函数 → IDirector 接口 + SinglePovDirector 实现类
+- **原因**: 支持未来多 POV 扩展（MultiPovDirector），同时在单 POV 中注入 NPC 信息
+- **影响**: CoreLoop 通过 this.director.generateScenes() 调用，可依赖注入替换实现
+
+### AD-15: 选项模式 vs 引力模式
+- **决定**: maxFreeActions=0 → 传统 Galgame 选项按钮（暂停等选择）；>0 → 引力评分自由行动期
+- **原因**: 两种模式适用不同场景，选项模式快速验证，引力模式留给行动模式
+- **影响**: CoreLoop.resolveNextChapter 分两条路径
 
 ## Known Issues
 
@@ -201,3 +223,49 @@
 - 内置剧本重命名为「风起（内置示例）」
 - initStorage 改为每次启动更新内置种子数据
 - tsc 零错误 + 预览验证通过
+
+### Session 17
+
+**思考系统优化：**
+- GameRenderer: POV 判定（povSpeaking），仅 POV 角色说话时允许思考
+- GameRenderer: thinking 期间禁止 handleAdvance 防止竞态
+- AUTO 模式细化：player-input/thought/dialogue 分别处理延迟
+- ChatInput: canThink 逻辑，非 POV 发言时显示"等待角色发言"
+
+**章节级分支系统：**
+- Schema: ChapterData 新增 id/next 字段，BranchOption/DivergencePoint 类型
+- CoreLoop: 章节跟踪、线性切换、分歧状态管理、引力评分集成
+- gravity.ts: 关键词匹配评分 + 累积分数 + 收束判定
+- Timeline: allEventsConsumed() + replaceEvents() 支持章节切换
+- 编辑器: ChapterEditor 分歧点完整配置 UI
+
+**分支 Demo 端到端：**
+- seed.ts: 内置剧本拆为 4 章节（风起→火起→[分歧]→灰烬之下/夜行）
+- CoreLoop: maxFreeActions=0 暂停等玩家选择（Promise 模式）
+- PlayerStore: activeDivergence + beginDivergenceChoice/resolveDivergenceChoice
+- GameRenderer: 选项 UI 面板（标题+按钮+LLM描述+loading）
+- agents/branch-describer.ts: LLM 动态生成选项情境描述
+
+**Director 接口抽象：**
+- IDirector 接口 + SinglePovDirector 实现类
+- DirectorInput 新增 npcPersonas 字段
+- system prompt 注入 NPC 角色信息（ID/说话风格/背景）
+- CoreLoop.gatherNpcPersonas() 自动收集非 POV 角色
+- 删除 runDirector 裸函数
+
+**调研：**
+- 对比 SillyTavern/OMate 生态：角色卡 V2/V3、Lorebook 世界书、玩法循环
+- 分析传统引擎分支管理（Ren'Py/Ink/ChoiceScript/Quality-Based Narrative）
+- 讨论引力机制设计（钻石/树状/混合结构）
+- 分析莉娅引用古籍过多的根因（speechStyle 描述模糊 + LLM 过度表现）
+
+**架构决策：**
+- AD-13: 分支在章节级（不在事件级），参照 Ink/ChoiceScript 的图模型
+- AD-14: Director 层抽象为接口，支持未来多 POV 扩展
+- AD-15: maxFreeActions=0 → 传统选项模式；>0 → 引力评分模式
+
+**待实现（下个 session）：**
+1. CorePersona 加 dialogueExamples（fewshot 控制说话频率）
+2. 角色面板显示所有角色
+3. 编辑器分歧详情显示修复
+4. Lorebook 世界书系统
