@@ -65,7 +65,9 @@ export function App() {
     coreLoopRef.current?.stop();
     coreLoopRef.current = null;
 
-    // Clear stale character data from previous runs, then initialize
+    // Clear stale debug + character data from previous runs
+    const debug = useDebugStore.getState();
+    debug.reset();
     resetCharacters();
     for (const character of script.characters) {
       initCharacter(character.core.id, character);
