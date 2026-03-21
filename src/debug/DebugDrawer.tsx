@@ -139,7 +139,7 @@ export function DebugDrawer() {
         <Section title={`记忆调用日志 (${state.memoryLogs.length})`} section="memoryLogs" expanded={expandedSections.memoryLogs} toggle={toggle}>
           {state.memoryLogs.length > 0 ? (
             <div>
-              {state.memoryLogs.slice(-10).reverse().map((log, i) => {
+              {state.memoryLogs.slice(-10).map((log, i) => {
                 const time = new Date(log.timestamp).toLocaleTimeString('zh-CN', { hour12: false });
                 const methodColor = log.error ? T.error
                   : log.method === 'assemble' ? T.gold
@@ -282,6 +282,9 @@ function formatLogData(data: unknown): string {
       // For arrays of objects with content field (recalled items)
       if (typeof v[0] === 'object' && v[0] !== null && 'content' in (v[0] as Record<string, unknown>)) {
         parts.push(`${k}: [${v.length}] ${v.map((item: Record<string, unknown>) => String(item.content ?? '').slice(0, 40)).join(' | ')}`);
+      } else if (typeof v[0] === 'string') {
+        // String arrays (e.g. recalledItems from assemble output)
+        parts.push(`${k}: [${v.length}] ${v.map((s: string) => s.slice(0, 40)).join(' | ')}`);
       } else {
         parts.push(`${k}: [${v.length}]`);
       }
