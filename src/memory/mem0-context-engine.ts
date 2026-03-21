@@ -4,7 +4,7 @@
  * Uses Mem0's semantic memory (add + search) as the memory layer,
  * while keeping the same IFullContextEngine interface as the builtin engine.
  *
- * API: https://api.mem0.ai/v1/memories/ (add), /v2/memories/search/ (search)
+ * API: https://api.mem0.ai/v1/memories/ (add), /v1/memories/search/ (search)
  * Auth: Token-based (Authorization: Token <api-key>)
  */
 
@@ -41,6 +41,7 @@ function makeMemory(id: string, characterId: string, content: string, type: Epis
 export class Mem0ContextEngine implements IFullContextEngine {
   private apiKey: string;
   private userId: string;
+  private runId: string;
   private characterId: string = '';
   private getWorldState: () => WorldState;
   private recentMemories: EpisodicMemory[] = [];
@@ -54,6 +55,8 @@ export class Mem0ContextEngine implements IFullContextEngine {
 
   constructor(apiKey: string, userId: string, getWorldState: () => WorldState) {
     this.apiKey = apiKey;
+    // Unique run_id per game session to isolate memories across runs
+    this.runId = `run-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     this.userId = userId;
     this.getWorldState = getWorldState;
   }
@@ -77,7 +80,7 @@ export class Mem0ContextEngine implements IFullContextEngine {
   async bootstrap(params: { sessionId: string; sessionFile: string }): Promise<BootstrapResult> {
     this.characterId = params.sessionId.replace('novel:', '');
     try {
-      await this.mem0Fetch('/v2/memories/search/', {
+      await this.mem0Fetch('/v1/memories/search/', {
         query: 'session start',
         user_id: this.userId,
         limit: 1,
@@ -109,7 +112,7 @@ export class Mem0ContextEngine implements IFullContextEngine {
     this.mem0Fetch('/v1/memories/', {
       messages: [{ role: params.message.role, content }],
       user_id: this.userId,
-      run_id: params.sessionId,
+      run_id: this.runId,
     }).catch((err) => console.warn('[Mem0] Ingest failed:', err));
 
     return { ingested: true };
@@ -134,7 +137,7 @@ export class Mem0ContextEngine implements IFullContextEngine {
     this.mem0Fetch('/v1/memories/', {
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       user_id: this.userId,
-      run_id: params.sessionId,
+      run_id: this.runId,
     }).catch((err) => console.warn('[Mem0] IngestBatch failed:', err));
 
     return { ingested: true, count: messages.length };
@@ -155,7 +158,7 @@ export class Mem0ContextEngine implements IFullContextEngine {
     const query = params.messages.slice(-3).map((m) => m.content).join(' ').slice(0, 200);
     let recalled: EpisodicMemory[] = [];
     try {
-      const result = await this.mem0Fetch('/v2/memories/search/', {
+      const result = await this.mem0Fetch('/v1/memories/search/', {
         query: query || 'recent events',
         user_id: this.userId,
         limit: 10,
