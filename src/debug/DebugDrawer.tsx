@@ -31,7 +31,6 @@ export function DebugDrawer() {
     goal: true,
     goap: true,
     memory: false,
-    memoryLogs: false,
     timeline: true,
     traces: true,
     errors: false,
@@ -135,54 +134,6 @@ export function DebugDrawer() {
           )}
         </Section>
 
-        {/* Memory Call Logs */}
-        <Section title={`记忆调用日志 (${state.memoryLogs.length})`} section="memoryLogs" expanded={expandedSections.memoryLogs} toggle={toggle}>
-          {state.memoryLogs.length > 0 ? (
-            <div>
-              {state.memoryLogs.slice(-10).map((log, i) => {
-                const time = new Date(log.timestamp).toLocaleTimeString('zh-CN', { hour12: false });
-                const methodColor = log.error ? T.error
-                  : log.method === 'assemble' ? T.gold
-                  : log.method === 'narrative.assemble' ? T.gold
-                  : log.method === 'recallMemories' ? T.info
-                  : log.method === 'ingest' ? T.success
-                  : log.method === 'narrative.ingest' ? T.accent
-                  : T.textSecondary;
-                return (
-                  <div key={i} style={styles.memLogEntry}>
-                    <div style={styles.memLogHeader}>
-                      <span style={{ color: T.textMuted }}>{time}</span>
-                      <span style={{ color: methodColor, fontWeight: 500 }}>{log.method}</span>
-                      <span style={{ color: T.textMuted }}>{log.durationMs}ms</span>
-                      {log.error && <span style={{ color: T.error }}>ERR</span>}
-                    </div>
-                    {log.input != null && (
-                      <div style={styles.memLogDetail}>
-                        <span style={styles.memLogLabel}>IN</span>
-                        <span style={styles.memLogValue}>{formatLogData(log.input)}</span>
-                      </div>
-                    )}
-                    {log.output != null && (
-                      <div style={styles.memLogDetail}>
-                        <span style={{ ...styles.memLogLabel, color: T.success }}>OUT</span>
-                        <span style={styles.memLogValue}>{formatLogData(log.output)}</span>
-                      </div>
-                    )}
-                    {log.error && (
-                      <div style={styles.memLogDetail}>
-                        <span style={{ ...styles.memLogLabel, color: T.error }}>ERR</span>
-                        <span style={{ ...styles.memLogValue, color: T.error }}>{log.error}</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={styles.empty}>无记忆调用记录</div>
-          )}
-        </Section>
-
         {/* Timeline */}
         <Section title="时间线" section="timeline" expanded={expandedSections.timeline} toggle={toggle}>
           <Row label="当前时间" value={state.timeline.currentTime} />
@@ -209,38 +160,106 @@ export function DebugDrawer() {
           )}
         </Section>
 
-        {/* Agent Traces */}
-        <Section title="Agent Trace" section="traces" expanded={expandedSections.traces} toggle={toggle}>
-          {state.traces.length > 0 ? (
-            <div>
-              {state.traces.slice(-8).reverse().map((t, i) => (
-                <div key={i} style={styles.traceEntry}>
-                  <div style={styles.traceItem}>
-                    <span style={styles.traceAgent}>{t.agent}</span>
-                    <span style={styles.traceDuration}>{(t.duration / 1000).toFixed(1)}s</span>
-                    <span style={styles.traceTokens}>
-                      {t.inputTokens + t.outputTokens} tok
-                    </span>
-                  </div>
-                  {t.inputSummary && (
-                    <div style={styles.traceSummary}>
-                      <span style={{ color: T.info }}>IN</span> {t.inputSummary}
-                    </div>
-                  )}
-                  {t.outputSummary && (
-                    <div style={styles.traceSummary}>
-                      <span style={{ color: T.success }}>OUT</span> {t.outputSummary}
-                    </div>
-                  )}
+        {/* Unified Call Timeline: Agent Traces + Memory Logs merged by timestamp */}
+        <Section title={`调用时间线 (${state.traces.length + state.memoryLogs.length})`} section="traces" expanded={expandedSections.traces} toggle={toggle}>
+          {(() => {
+            // Merge traces and memory logs into a single sorted timeline
+            type TimelineItem =
+              | { kind: 'trace'; data: typeof state.traces[0] }
+              | { kind: 'memory'; data: typeof state.memoryLogs[0] };
+
+            const items: TimelineItem[] = [
+              ...state.traces.map((t) => ({ kind: 'trace' as const, data: t })),
+              ...state.memoryLogs.map((m) => ({ kind: 'memory' as const, data: m })),
+            ];
+            items.sort((a, b) => {
+              const ta = a.kind === 'trace' ? a.data.timestamp : a.data.timestamp;
+              const tb = b.kind === 'trace' ? b.data.timestamp : b.data.timestamp;
+              return ta - tb;
+            });
+
+            // Show last 20 items
+            const recent = items.slice(-20);
+
+            if (recent.length === 0) {
+              return <div style={styles.empty}>无调用记录</div>;
+            }
+
+            return (
+              <div>
+                {recent.map((item, i) => {
+                  if (item.kind === 'trace') {
+                    const t = item.data;
+                    const time = new Date(t.timestamp).toLocaleTimeString('zh-CN', { hour12: false });
+                    return (
+                      <div key={`t-${i}`} style={styles.traceEntry}>
+                        <div style={styles.traceItem}>
+                          <span style={{ color: T.textMuted, fontSize: '10px' }}>{time}</span>
+                          <span style={styles.traceAgent}>{t.agent}</span>
+                          <span style={styles.traceDuration}>{(t.duration / 1000).toFixed(1)}s</span>
+                          <span style={styles.traceTokens}>
+                            {t.inputTokens + t.outputTokens} tok
+                          </span>
+                        </div>
+                        {t.inputSummary && (
+                          <div style={styles.traceSummary}>
+                            <span style={{ color: T.info }}>IN</span> {t.inputSummary}
+                          </div>
+                        )}
+                        {t.outputSummary && (
+                          <div style={styles.traceSummary}>
+                            <span style={{ color: T.success }}>OUT</span> {t.outputSummary}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  } else {
+                    const log = item.data;
+                    const time = new Date(log.timestamp).toLocaleTimeString('zh-CN', { hour12: false });
+                    const methodColor = log.error ? T.error
+                      : log.method === 'assemble' ? T.gold
+                      : log.method === 'narrative.assemble' ? T.gold
+                      : log.method === 'recallMemories' ? T.info
+                      : log.method === 'ingest' ? T.success
+                      : log.method === 'narrative.ingest' ? T.accent
+                      : T.textSecondary;
+                    return (
+                      <div key={`m-${i}`} style={styles.memLogEntry}>
+                        <div style={styles.memLogHeader}>
+                          <span style={{ color: T.textMuted }}>{time}</span>
+                          <span style={{ color: methodColor, fontWeight: 500 }}>{log.method}</span>
+                          <span style={{ color: T.textMuted }}>{log.durationMs}ms</span>
+                          {log.error && <span style={{ color: T.error }}>ERR</span>}
+                        </div>
+                        {log.input != null && (
+                          <div style={styles.memLogDetail}>
+                            <span style={styles.memLogLabel}>IN</span>
+                            <span style={styles.memLogValue}>{formatLogData(log.input)}</span>
+                          </div>
+                        )}
+                        {log.output != null && (
+                          <div style={styles.memLogDetail}>
+                            <span style={{ ...styles.memLogLabel, color: T.success }}>OUT</span>
+                            <span style={styles.memLogValue}>{formatLogData(log.output)}</span>
+                          </div>
+                        )}
+                        {log.error && (
+                          <div style={styles.memLogDetail}>
+                            <span style={{ ...styles.memLogLabel, color: T.error }}>ERR</span>
+                            <span style={{ ...styles.memLogValue, color: T.error }}>{log.error}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                })}
+                <div style={styles.traceTotal}>
+                  总Token：{state.traces.reduce((sum, t) => sum + t.inputTokens + t.outputTokens, 0).toLocaleString()}
+                  {' · '}记忆调用：{state.memoryLogs.length}次
                 </div>
-              ))}
-              <div style={styles.traceTotal}>
-                总Token：{state.traces.reduce((sum, t) => sum + t.inputTokens + t.outputTokens, 0).toLocaleString()}
               </div>
-            </div>
-          ) : (
-            <div style={styles.empty}>无trace数据</div>
-          )}
+            );
+          })()}
         </Section>
 
         {/* Errors */}
