@@ -19,10 +19,12 @@ import type { IFullContextEngine } from '../memory/context-engine';
 import { usePlayerStore } from '../player/player-store';
 import { useCharacterStore } from '../memory/character-store';
 import { runThinking } from '../agents/thinking';
+import { runBranchDescriber } from '../agents/branch-describer';
 import { T } from '../theme';
 import {
   Smile, Frown, Angry,
   AlertCircle, Eye, Flame, Brain, MessageCircle,
+  GitBranch, Loader2,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import type { LucideProps } from 'lucide-react';
@@ -92,6 +94,8 @@ export function GameRenderer({
 
   const autoAdvance = usePlayerStore((s) => s.autoAdvance);
   const thinking = usePlayerStore((s) => s.thinking);
+  const activeDivergence = usePlayerStore((s) => s.activeDivergence);
+  const branchDescriptions = usePlayerStore((s) => s.branchDescriptions);
 
   // When new scenes arrive from core-loop, enqueue them
   useEffect(() => {
@@ -293,6 +297,41 @@ export function GameRenderer({
     }
   }, [history, displayed]);
 
+  // ─── Divergence choice: trigger LLM description generation ───
+  useEffect(() => {
+    if (!activeDivergence) return;
+    const recentSummary = history
+      .slice(-8)
+      .map((s) => {
+        const text = s.dialogue || s.narration || '';
+        return s.speaker ? `${s.speaker}：${text}` : text;
+      })
+      .join('\n');
+
+    runBranchDescriber({
+      branches: activeDivergence.branches.map((b) => ({
+        label: b.label,
+        gravityDescription: b.gravityDescription,
+      })),
+      recentScenesSummary: recentSummary,
+      characterName,
+    })
+      .then((descriptions) => {
+        usePlayerStore.getState().setBranchDescriptions(descriptions);
+      })
+      .catch((err) => {
+        console.error('[BranchDescriber] Failed:', err);
+        // Fallback: use gravityDescription directly
+        const fallback = activeDivergence.branches.map((b) => b.gravityDescription);
+        usePlayerStore.getState().setBranchDescriptions(fallback);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDivergence]);
+
+  const handleBranchChoice = useCallback((targetChapterId: string) => {
+    usePlayerStore.getState().resolveDivergenceChoice(targetChapterId);
+  }, []);
+
   const emotionIcons: Record<string, ComponentType<LucideProps> | null> = {
     neutral: null,
     happy: Smile,
@@ -381,8 +420,44 @@ export function GameRenderer({
         </div>
       )}
 
+      {/* ─── Divergence choice panel ─── */}
+      {activeDivergence && (
+        <div style={styles.choicePanel}>
+          <div style={styles.choiceHeader}>
+            <GitBranch size={16} style={{ color: T.accent }} />
+            <span style={styles.choiceTitle}>命运的岔路</span>
+          </div>
+          <div style={styles.choiceList}>
+            {activeDivergence.branches.map((branch, i) => (
+              <button
+                key={branch.targetChapterId}
+                style={styles.choiceButton}
+                onClick={() => handleBranchChoice(branch.targetChapterId)}
+                onMouseEnter={(e) => {
+                  Object.assign(e.currentTarget.style, styles.choiceButtonHover);
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = T.accent;
+                  e.currentTarget.style.background = T.bgSurface;
+                }}
+              >
+                <span style={styles.choiceLabel}>{branch.label}</span>
+                {branchDescriptions?.[i] ? (
+                  <span style={styles.choiceDesc}>{branchDescriptions[i]}</span>
+                ) : (
+                  <span style={styles.choiceDescLoading}>
+                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                    正在构思...
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Empty state when no scene and no queue */}
-      {!currentScene && queue.length === 0 && history.length === 0 && (
+      {!currentScene && !activeDivergence && queue.length === 0 && history.length === 0 && (
         <div style={styles.dialogueBox}>
           <p style={styles.emptyHint}>等待叙事生成...</p>
         </div>
@@ -644,5 +719,67 @@ const styles: Record<string, React.CSSProperties> = {
     fontStyle: 'italic',
     fontSize: '14px',
     margin: 0,
+  },
+  // ─── Choice panel styles ─────────────
+  choicePanel: {
+    background: T.bgSurface,
+    borderRadius: `${T.radiusXl} ${T.radiusXl} 0 0`,
+    padding: '20px 24px',
+    flexShrink: 0,
+    boxShadow: T.shadowCard,
+  },
+  choiceHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '16px',
+  },
+  choiceTitle: {
+    fontSize: '16px',
+    fontWeight: 600,
+    color: T.accent,
+    fontFamily: T.fontSerif,
+  },
+  choiceList: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '10px',
+  },
+  choiceButton: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '4px',
+    padding: '14px 18px',
+    background: T.bgSurface,
+    border: `1px solid ${T.accent}`,
+    borderRadius: T.radius,
+    cursor: 'pointer',
+    textAlign: 'left' as const,
+    transition: 'all 0.2s ease',
+    outline: 'none',
+  },
+  choiceButtonHover: {
+    borderColor: T.gold,
+    background: `color-mix(in srgb, ${T.bgSurface} 85%, ${T.accent} 15%)`,
+  },
+  choiceLabel: {
+    fontSize: '15px',
+    fontWeight: 600,
+    color: T.textPrimary,
+    fontFamily: T.fontSerif,
+  },
+  choiceDesc: {
+    fontSize: '13px',
+    color: T.textSecondary,
+    lineHeight: '1.6',
+    fontFamily: T.fontSerif,
+  },
+  choiceDescLoading: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '12px',
+    color: T.textMuted,
+    fontFamily: T.fontSans,
   },
 };

@@ -12,6 +12,7 @@
  */
 
 import { create } from 'zustand';
+import type { DivergencePoint } from '../storage/storage-interface';
 
 export interface ChatMessage {
   id: string;
@@ -32,6 +33,11 @@ export interface PlayerState {
   povSpeaking: boolean;    // POV 角色正在说话（允许思考）
   divergenceActive: boolean; // 分歧点活跃（玩家行为影响剧情走向）
 
+  // Divergence choice (传统选项模式, maxFreeActions=0)
+  activeDivergence: DivergencePoint | null;
+  branchDescriptions: string[] | null;  // LLM 生成的选项描述
+  divergenceChoiceResolver: ((chapterId: string) => void) | null;
+
   // Message queue
   pendingMessage: string | null;
 
@@ -50,6 +56,10 @@ export interface PlayerState {
   setThinking: (v: boolean) => void;
   setPovSpeaking: (v: boolean) => void;
   setDivergenceActive: (v: boolean) => void;
+  setActiveDivergence: (d: DivergencePoint | null) => void;
+  setBranchDescriptions: (d: string[] | null) => void;
+  beginDivergenceChoice: (d: DivergencePoint) => Promise<string>;
+  resolveDivergenceChoice: (chapterId: string) => void;
   sendMessage: (content: string) => void;
   consumePendingMessage: () => string | null;
   addNarratorMessage: (content: string) => void;
@@ -71,6 +81,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   thinking: false,
   povSpeaking: false,
   divergenceActive: false,
+  activeDivergence: null,
+  branchDescriptions: null,
+  divergenceChoiceResolver: null,
   pendingMessage: null,
   chatHistory: [],
   presetScenesActive: false,
@@ -109,6 +122,36 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   setDivergenceActive: (v) => {
     set({ divergenceActive: v });
+  },
+
+  setActiveDivergence: (d) => {
+    set({ activeDivergence: d });
+  },
+
+  setBranchDescriptions: (d) => {
+    set({ branchDescriptions: d });
+  },
+
+  beginDivergenceChoice: (d) => {
+    return new Promise<string>((resolve) => {
+      set({
+        activeDivergence: d,
+        divergenceChoiceResolver: resolve,
+        branchDescriptions: null,
+        divergenceActive: true,
+      });
+    });
+  },
+
+  resolveDivergenceChoice: (chapterId) => {
+    const resolver = get().divergenceChoiceResolver;
+    set({
+      activeDivergence: null,
+      divergenceChoiceResolver: null,
+      branchDescriptions: null,
+      divergenceActive: false,
+    });
+    if (resolver) resolver(chapterId);
   },
 
   sendMessage: (content) => {

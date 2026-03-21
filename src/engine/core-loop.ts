@@ -17,7 +17,8 @@
 import type { IFullContextEngine, AssembleResult, AgentMessage } from '../memory/context-engine';
 import { useCharacterStore } from '../memory/character-store';
 import { runCognition } from '../agents/cognition';
-import { runDirector } from '../agents/director';
+import { SinglePovDirector } from '../agents/director';
+import type { IDirector } from '../agents/director';
 import { runReflection } from '../agents/reflection';
 import { generateGoapAction } from '../agents/goap-generator';
 import { planActions, mapGoalToGOAPState } from '../goap/planner';
@@ -36,6 +37,7 @@ export interface CoreLoopConfig {
   goapActions: GOAPAction[];
   chapters: ChapterData[];
   initialChapterIndex?: number;
+  director?: IDirector;
   onScenesReady: (scenes: SceneOutput[]) => void;
   onChapterTransition?: (fromChapter: ChapterData, toChapter: ChapterData) => void;
   onLoopComplete: () => void;
@@ -49,6 +51,7 @@ export class CoreLoop {
   private sessionId: string;
   private currentChapterIndex: number;
   private chapterExhausted = false;
+  private director: IDirector;
   private divergence: {
     point: DivergencePoint;
     scores: Map<string, number>;
@@ -59,6 +62,7 @@ export class CoreLoop {
     this.config = config;
     this.sessionId = `novel:${config.characterId}`;
     this.currentChapterIndex = config.initialChapterIndex ?? 0;
+    this.director = config.director ?? new SinglePovDirector();
   }
 
   async start() {
@@ -126,7 +130,7 @@ export class CoreLoop {
     // ─── 章节切换检测 ───
     if (!this.chapterExhausted && timeline.allEventsConsumed()) {
       this.chapterExhausted = true;
-      const transitioned = this.resolveNextChapter();
+      const transitioned = await this.resolveNextChapter();
       if (transitioned) return; // 切换成功，下一轮会从新章节开始
     }
 
@@ -324,8 +328,8 @@ export class CoreLoop {
       })),
     });
 
-    // Small delay between cycles for readability
-    await this.sleep(2000);
+    // Small delay between cycles
+    await this.sleep(500);
   }
 
   /**
@@ -437,10 +441,14 @@ export class CoreLoop {
       charStore.updateShortTermGoalStatus(characterId, activeIndex, 'interrupted');
     }
 
+    // Gather NPC personas for director
+    const npcPersonas = this.gatherNpcPersonas();
+
     // Generate narrative for the interruption
     debug.setPhase('director');
-    const directorResult = await runDirector({
+    const directorResult = await this.director.generateScenes({
       characterPersona: persona,
+      npcPersonas,
       currentGoal: goal,
       action: {
         id: 'interrupted',
@@ -494,10 +502,14 @@ export class CoreLoop {
     const debug = useDebugStore.getState();
     const { contextEngine } = this.config;
 
+    // Gather NPC personas for director
+    const npcPersonas = this.gatherNpcPersonas();
+
     // ⑤ Director Agent: narrative generation
     debug.setPhase('director');
-    const directorResult = await runDirector({
+    const directorResult = await this.director.generateScenes({
       characterPersona: persona,
+      npcPersonas,
       currentGoal: goal,
       action,
       worldEvent,
@@ -531,8 +543,10 @@ export class CoreLoop {
       });
     }
 
-    // Pause to let player read
-    await this.sleep(2000);
+    // Wait for player to advance through all scenes before continuing
+    if (directorResult.scenes.length > 0) {
+      await usePlayerStore.getState().beginPresetSequence();
+    }
   }
 
   /**
@@ -596,6 +610,19 @@ export class CoreLoop {
     debug.setPhase('idle');
   }
 
+  /**
+   * Gather NPC personas from CharacterStore (all characters except POV).
+   */
+  private gatherNpcPersonas() {
+    const { characterId } = this.config;
+    const charStore = useCharacterStore.getState();
+    const allCharIds = Object.keys(charStore.characters);
+    return allCharIds
+      .filter((id) => id !== characterId)
+      .map((id) => charStore.getPersona(id))
+      .filter((p): p is NonNullable<typeof p> => p !== null);
+  }
+
   private describeSituation(timeline: Timeline): string {
     const active = timeline.getActiveEvents();
     if (active.length > 0) {
@@ -613,7 +640,7 @@ export class CoreLoop {
    * - DivergencePoint：进入分歧模式（Phase 3）
    * 返回 true 表示成功切换，false 表示无后续章节（进入纯 AI 模式）
    */
-  private resolveNextChapter(): boolean {
+  private async resolveNextChapter(): Promise<boolean> {
     const { chapters } = this.config;
     const current = chapters[this.currentChapterIndex];
     const next = current?.next;
@@ -642,8 +669,28 @@ export class CoreLoop {
       return false;
     }
 
-    // DivergencePoint — 进入分歧模式，启动引力评分
+    // DivergencePoint — 分歧模式
     const divergence = next as DivergencePoint;
+    const debug = useDebugStore.getState();
+    const branchLabels = divergence.branches.map((b) => b.label).join(' / ');
+
+    // maxFreeActions === 0 → 立即暂停，等待玩家选择（传统选项模式）
+    if (divergence.maxFreeActions === 0) {
+      debug.pushError(`[分歧点] 等待玩家选择：${branchLabels}`);
+
+      const playerStore = usePlayerStore.getState();
+      const chosenChapterId = await playerStore.beginDivergenceChoice(divergence);
+
+      debug.pushError(`[分歧点] 玩家选择：${chosenChapterId}`);
+
+      const targetIndex = chapters.findIndex((ch) => ch.id === chosenChapterId);
+      if (targetIndex >= 0) {
+        return this.transitionToChapter(chapters[targetIndex], targetIndex);
+      }
+      return false;
+    }
+
+    // maxFreeActions > 0 → 引力评分模式（自由行动期）
     this.divergence = {
       point: divergence,
       scores: initScores(divergence.branches),
@@ -651,8 +698,6 @@ export class CoreLoop {
     };
     usePlayerStore.getState().setDivergenceActive(true);
 
-    const debug = useDebugStore.getState();
-    const branchLabels = divergence.branches.map((b) => b.label).join(' / ');
     debug.pushError(`[分歧点] 进入自由行动期（${divergence.maxFreeActions} 轮），分支：${branchLabels}`);
 
     // 不切换章节，继续 AI 管线；引力评分在 tickDivergence 中进行
