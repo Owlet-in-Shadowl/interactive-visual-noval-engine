@@ -55,6 +55,10 @@ export class CoreLoop {
   private chapterExhausted = false;
   private director: IDirector;
   private narrativeMemory: NarrativeMemory;
+  /** Persistent GOAP world state — accumulates action effects across cycles */
+  private goapWorldState: Record<string, boolean | number | string> = {};
+  /** History of completed actions (for cognition dedup) */
+  private completedActions: { actionId: string; actionName: string; goalWhat: string; timestamp: number }[] = [];
   /** Last Director output text — fallback for recentSceneText when narrativeContext not available */
   private lastDirectorSceneText: string = '';
   private divergence: {
@@ -193,6 +197,14 @@ export class CoreLoop {
       recalledItems: assembled.metadata?.recalledMemories ?? [],
     });
 
+    // Inject completed actions into cognition context to prevent goal repetition
+    if (this.completedActions.length > 0) {
+      const recentCompleted = this.completedActions.slice(-5);
+      const completedBlock = `\n\n## 已完成的行动（不要重复规划这些行动，推进到新的目标）：\n${recentCompleted.map((a) => `- ✅ ${a.actionName}：${a.goalWhat}`).join('\n')}`;
+      const sysMsg = assembled.messages.find((m) => m.role === 'system');
+      if (sysMsg) sysMsg.content += completedBlock;
+    }
+
     // ② Cognition Agent: 5W1H reasoning
     debug.setPhase('cognition');
     const cognitionResult = await runCognition(assembled);
@@ -250,7 +262,8 @@ export class CoreLoop {
     // ③ GOAP planning
     debug.setPhase('goap');
     const goalState = mapGoalToGOAPState(goal.what, goal.where);
-    const plan = planActions({}, goalState, goapActions);
+    const recentlyCompletedIds = this.completedActions.slice(-10).map((a) => a.actionId);
+    const plan = planActions(this.goapWorldState, goalState, goapActions, 5, recentlyCompletedIds);
 
     if (!plan || plan.actions.length === 0) {
       // Fallback: create a simple "go and do" plan
@@ -577,6 +590,18 @@ export class CoreLoop {
         },
       });
     }
+
+    // Apply GOAP effects to persistent world state
+    for (const [key, value] of Object.entries(action.effects)) {
+      this.goapWorldState[key] = value;
+    }
+    // Track completed action for cognition dedup
+    this.completedActions.push({
+      actionId: action.id,
+      actionName: action.name,
+      goalWhat: goal.what,
+      timestamp: Date.now(),
+    });
 
     // Wait for player to advance through all scenes before continuing
     if (directorResult.scenes.length > 0) {

@@ -47,7 +47,10 @@ export function planActions(
   goalState: GOAPWorldState,
   availableActions: GOAPAction[],
   maxDepth: number = 5,
+  /** Action IDs completed in previous cycles — deprioritized (cost +10) */
+  recentlyCompletedIds?: string[],
 ): PlanResult | null {
+  const completedSet = new Set(recentlyCompletedIds ?? []);
   interface SearchNode {
     state: GOAPWorldState;
     actions: GOAPAction[];
@@ -83,10 +86,12 @@ export function planActions(
         if (node.actions.some((a) => a.id === action.id)) continue;
 
         const newState = applyEffects(node.state, action);
+        // Penalize recently completed actions to encourage variety
+        const costPenalty = completedSet.has(action.id) ? 10 : 0;
         queue.push({
           state: newState,
           actions: [...node.actions, action],
-          cost: node.cost + action.cost,
+          cost: node.cost + action.cost + costPenalty,
           time: node.time + action.timeCost,
         });
       }
@@ -98,20 +103,26 @@ export function planActions(
 
 /**
  * Map a 5W1H goal to a GOAP goal state.
- * MVP: simple keyword mapping.
+ * Extracts context (who/where) to generate more specific effect keys,
+ * preventing different actions from colliding on the same generic effect.
  */
 export function mapGoalToGOAPState(what: string, where: string): GOAPWorldState {
   const state: GOAPWorldState = { atDestination: true };
 
   const lower = what.toLowerCase();
+  // Extract target NPC name from the goal text for contextual effects
+  const npcMatch = lower.match(/(?:与|跟|向|找|问)([\u4e00-\u9fa5]{2,4})/);
+  const npcSuffix = npcMatch ? `_${npcMatch[1]}` : '';
+  const locSuffix = where ? `_at_${where}` : '';
+
   if (lower.includes('查阅') || lower.includes('查找') || lower.includes('研究')) {
-    state.hasInformation = true;
+    state[`hasInformation${locSuffix}`] = true;
   }
   if (lower.includes('交谈') || lower.includes('询问') || lower.includes('打听')) {
-    state.hasDialogue = true;
+    state[`hasDialogue${npcSuffix || locSuffix}`] = true;
   }
   if (lower.includes('调查') || lower.includes('线索') || lower.includes('搜索')) {
-    state.hasClue = true;
+    state[`hasClue${locSuffix}`] = true;
   }
   if (lower.includes('采集') || lower.includes('草药')) {
     state.hasHerbs = true;
