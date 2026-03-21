@@ -45,10 +45,10 @@
 | 37 | 分支 Demo 端到端（选项UI+LLM描述+4章节拆分） | done | commit 2470237 |
 | 38 | Director 接口抽象（IDirector+SinglePovDirector+NPC注入） | done | commit 2470237 |
 | — | **以下为待做功能** | — | — |
-| 39 | CorePersona 加 dialogueExamples（fewshot 控制说话频率） | pending | 借鉴 ST mes_example |
-| 40 | 角色面板显示所有角色（不仅 POV） | pending | CharacterPanel 改为遍历全部 |
-| 41 | 编辑器分歧详情显示修复 | pending | 选中有分歧的章节时右侧不显示分支配置 |
-| 42 | Lorebook 世界书系统 | pending | ScriptBundle 加 lorebook 字段，关键词触发注入上下文 |
+| 39 | CorePersona 加 dialogueExamples（fewshot 控制说话频率） | done | commit 83075ea |
+| 40 | 角色面板显示所有角色（POV + NPC） | done | commit 18cade4 |
+| 41 | 编辑器点击章节自动展开（修复分歧详情可见性） | done | commit 0c26af7 |
+| 42 | Lorebook 世界书系统 | done | commit d50dd9c |
 | 43 | 「俺寻思」Phase 2：分歧决策点 + 主动提示 | pending | anchorLevel soft 事件 |
 | 44 | 引力评分模式验证（maxFreeActions>0） | pending | |
 | 45 | P0 修复：EDR 全局 Store 解耦 | pending | code-quality-audit.md |
@@ -264,8 +264,8 @@
 - AD-14: Director 层抽象为接口，支持未来多 POV 扩展
 - AD-15: maxFreeActions=0 → 传统选项模式；>0 → 引力评分模式
 
-**待实现（下个 session）：**
-1. CorePersona 加 dialogueExamples（fewshot 控制说话频率）
-2. 角色面板显示所有角色
-3. 编辑器分歧详情显示修复
-4. Lorebook 世界书系统
+**继续实现（同 session）：**
+1. ✅ CorePersona 加 dialogueExamples + liya.json 6条示例 + Director/Thinking 注入
+2. ✅ CharacterPanel 重构：遍历所有角色，POV 标"主视角"徽标，NPC 显示基本信息
+3. ✅ EditorTree 点击章节自动展开子树（修复分歧详情不可见的 UX 问题）
+4. ✅ Lorebook 世界书系统：Schema + 匹配引擎 + Director 注入 + 5条内置条目
