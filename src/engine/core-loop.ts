@@ -26,7 +26,7 @@ import { Timeline } from '../timeline/timeline';
 import { useDebugStore } from '../debug/debug-store';
 import { usePlayerStore } from '../player/player-store';
 import type { GOAPAction, SceneOutput, WorldEvent, Goal5W1H, EpisodicMemory } from '../memory/schemas';
-import type { ChapterData, DivergencePoint } from '../storage/storage-interface';
+import type { ChapterData, DivergencePoint, LorebookEntry } from '../storage/storage-interface';
 import { scoreText, accumulateScores, resolveGravity, initScores } from './gravity';
 import { framesToScenes, projectAllMemories } from '../pf';
 
@@ -38,6 +38,7 @@ export interface CoreLoopConfig {
   chapters: ChapterData[];
   initialChapterIndex?: number;
   director?: IDirector;
+  lorebookEntries?: LorebookEntry[];
   onScenesReady: (scenes: SceneOutput[]) => void;
   onChapterTransition?: (fromChapter: ChapterData, toChapter: ChapterData) => void;
   onLoopComplete: () => void;
@@ -462,6 +463,8 @@ export class CoreLoop {
       worldEvent: event,
       interrupted: true,
       playerMessage: playerMessage ?? undefined,
+      lorebookEntries: this.config.lorebookEntries,
+      recentSceneText: this.getRecentSceneText(),
     });
 
     debug.pushTrace({
@@ -515,6 +518,8 @@ export class CoreLoop {
       worldEvent,
       interrupted,
       playerMessage: playerMessage ?? undefined,
+      lorebookEntries: this.config.lorebookEntries,
+      recentSceneText: this.getRecentSceneText(),
     });
 
     debug.pushTrace({
@@ -608,6 +613,15 @@ export class CoreLoop {
     }
 
     debug.setPhase('idle');
+  }
+
+  /**
+   * Build recent scene text for lorebook matching.
+   */
+  private getRecentSceneText(): string {
+    const debug = useDebugStore.getState();
+    const scenes = debug.currentScenes ?? [];
+    return scenes.map((s) => [s.dialogue, s.narration].filter(Boolean).join(' ')).join(' ');
   }
 
   /**

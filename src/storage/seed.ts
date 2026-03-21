@@ -3,7 +3,7 @@
  * for the built-in default script.
  */
 
-import type { ScriptBundle, ChapterData } from './storage-interface';
+import type { ScriptBundle, ChapterData, LorebookEntry } from './storage-interface';
 import type { CharacterState, GOAPAction, WorldEvent } from '../memory/schemas';
 
 // Static imports (same data that was previously hardcoded in App.tsx)
@@ -138,5 +138,62 @@ export function createBuiltinScript(): ScriptBundle {
     ],
     chapters: builtinChapters,
     goapActions: goapActionsData as unknown as GOAPAction[],
+    lorebook: builtinLorebook,
   };
 }
+
+// ─── Lorebook 世界书条目 ──────────────────────────────
+
+const builtinLorebook: LorebookEntry[] = [
+  {
+    id: 'lore-library',
+    keys: ['图书馆', '书架', '古籍'],
+    content: '小镇图书馆始建于三百年前，由第一任镇长捐赠。馆藏以边境历史文献为主。据传地下室有一间密室，入口在五十年前的翻修中被封死。图书馆管理员是赫尔曼的老友。',
+    priority: 5,
+    position: 'after_persona',
+    enabled: true,
+    constant: false,
+    selective: false,
+  },
+  {
+    id: 'lore-evans-family',
+    keys: ['艾文斯', '家族', '徽记', '徽章'],
+    content: '艾文斯家族曾是王国六大贵族之一，掌管边境三郡的税收和军务。十五年前因"通敌叛国"罪名被抄没，但民间普遍认为这是一场冤案。家族徽记是一只衔着月桂枝的银鹰。',
+    priority: 8,
+    position: 'after_persona',
+    enabled: true,
+    constant: false,
+    selective: false,
+  },
+  {
+    id: 'lore-herman',
+    keys: ['赫尔曼', '老学者', '导师', '养父'],
+    content: '赫尔曼·格雷是前王立学院的历史学教授，因拒绝在艾文斯家族案件的调查报告上签字而被解职。此后隐居边境小镇，以教书和抄写古籍为生。他收养了年幼的莉娅，从未向她透露家族覆灭的全部真相。',
+    priority: 7,
+    position: 'after_persona',
+    enabled: true,
+    constant: false,
+    selective: false,
+  },
+  {
+    id: 'lore-border-town',
+    keys: ['小镇', '边境'],
+    secondaryKeys: ['历史', '建筑', '街道'],
+    selective: true,
+    content: '灰石镇位于王国东部边境，是连接王城与蛮荒领的唯一驿道枢纽。镇上建筑以灰色石材为主，街道狭窄曲折。常住居民约八百人，大多靠边境贸易和驿站服务维生。',
+    priority: 3,
+    position: 'before_scene',
+    enabled: true,
+    constant: false,
+  },
+  {
+    id: 'lore-guard-patrol',
+    keys: ['巡逻', '卫兵', '搜捕'],
+    content: '王城卫兵队近年来频繁向边境小镇派遣巡逻队，表面上是维持治安，实际上似乎在搜寻某样东西——或某个人。马库斯队长是这批卫兵中军衔最高的，但他似乎对上级的命令也心存疑虑。',
+    priority: 6,
+    position: 'after_persona',
+    enabled: true,
+    constant: false,
+    selective: false,
+  },
+];

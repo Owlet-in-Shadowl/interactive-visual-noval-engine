@@ -102,6 +102,7 @@ export function App() {
       timeline,
       goapActions: runtimeActions,
       chapters,
+      lorebookEntries: script.lorebook ?? [],
       onScenesReady: (newScenes) => {
         setScenes(newScenes);
       },

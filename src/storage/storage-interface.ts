@@ -55,6 +55,25 @@ export const ChapterDataSchema = z.object({
     .describe('后继章节：string=线性跳转，DivergencePoint=分歧点，undefined=按数组顺序'),
 });
 
+// ─── Lorebook (World Book) Schema ─────────────────────
+
+export const LorebookEntrySchema = z.object({
+  id: z.string().describe('条目唯一 ID'),
+  keys: z.array(z.string()).describe('主关键词：场景文本命中任一关键词即触发'),
+  secondaryKeys: z.array(z.string()).optional()
+    .describe('辅助关键词：启用 selective 时，需同时命中主+辅关键词'),
+  selective: z.boolean().optional().default(false)
+    .describe('是否要求同时命中主关键词和辅助关键词'),
+  content: z.string().describe('触发后注入 LLM 上下文的文本'),
+  constant: z.boolean().optional().default(false)
+    .describe('始终激活（不需要关键词触发）'),
+  enabled: z.boolean().optional().default(true),
+  priority: z.number().optional().default(0)
+    .describe('优先级（数字越大越优先，超出 token 预算时低优先级被裁剪）'),
+  position: z.enum(['before_persona', 'after_persona', 'before_scene']).optional().default('after_persona')
+    .describe('注入位置'),
+});
+
 // ─── Full Script Bundle Schema ─────────────────────────
 
 export const ScriptBundleSchema = z.object({
@@ -62,6 +81,8 @@ export const ScriptBundleSchema = z.object({
   characters: z.array(CharacterStateSchema).min(1),
   chapters: z.array(ChapterDataSchema).min(1),
   goapActions: z.array(GOAPActionSchema).min(1),
+  lorebook: z.array(LorebookEntrySchema).optional().default([])
+    .describe('世界书条目：关键词触发的上下文知识注入'),
 });
 
 // ─── Type Exports ──────────────────────────────────────
@@ -71,6 +92,7 @@ export type ChapterData = z.infer<typeof ChapterDataSchema>;
 export type ScriptBundle = z.infer<typeof ScriptBundleSchema>;
 export type BranchOption = z.infer<typeof BranchOptionSchema>;
 export type DivergencePoint = z.infer<typeof DivergencePointSchema>;
+export type LorebookEntry = z.infer<typeof LorebookEntrySchema>;
 
 // ─── Chapter Normalization ────────────────────────────
 

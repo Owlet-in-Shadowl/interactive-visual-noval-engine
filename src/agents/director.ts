@@ -15,6 +15,8 @@ import { getChatModel } from './deepseek';
 import { extractJSON } from './utils';
 import { SceneOutputSchema } from '../memory/schemas';
 import type { GOAPAction, Goal5W1H, CorePersona, WorldEvent, SceneOutput } from '../memory/schemas';
+import type { LorebookEntry } from '../storage/storage-interface';
+import { matchLorebook, buildLorebookContext } from '../engine/lorebook';
 
 // ─── Types ──────────────────────────────────────────
 
@@ -26,6 +28,8 @@ export interface DirectorInput {
   worldEvent?: WorldEvent;
   interrupted?: boolean;
   playerMessage?: string;
+  lorebookEntries?: LorebookEntry[];
+  recentSceneText?: string;
 }
 
 export interface DirectorResult {
@@ -83,15 +87,32 @@ export class SinglePovDirector implements IDirector {
         input.characterPersona.dialogueExamples.map((ex) => `  「${ex}」`).join('\n')
       : '';
 
-    const system = `你是一位互动小说的叙事导演。你需要将角色的机械动作翻译为富有文学性的对话和环境描写。
+    // Lorebook context injection
+    let lorebookBeforePersona = '';
+    let lorebookAfterPersona = '';
+    let lorebookBeforeScene = '';
+    if (input.lorebookEntries?.length) {
+      // Build scan text from action description + recent scene text + event description
+      const scanText = [
+        input.action.description,
+        input.recentSceneText ?? '',
+        input.worldEvent?.description ?? '',
+      ].join(' ');
+      const matched = matchLorebook(scanText, input.lorebookEntries);
+      lorebookBeforePersona = buildLorebookContext(matched, 'before_persona');
+      lorebookAfterPersona = buildLorebookContext(matched, 'after_persona');
+      lorebookBeforeScene = buildLorebookContext(matched, 'before_scene');
+    }
+
+    const system = `你是一位互动小说的叙事导演。你需要将角色的机械动作翻译为富有文学性的对话和环境描写。${lorebookBeforePersona}
 
 主视角角色：
 - 名字：${input.characterPersona.name}（ID: ${input.characterPersona.id}）
 - 说话风格：${input.characterPersona.speechStyle}
-- 背景：${input.characterPersona.background}${dialogueExamplesContext}${npcContext}
+- 背景：${input.characterPersona.background}${dialogueExamplesContext}${npcContext}${lorebookAfterPersona}
 
 当前目标：${input.currentGoal.what}
-原因：${input.currentGoal.why}${eventContext}${interruptContext}${playerContext}`;
+原因：${input.currentGoal.why}${eventContext}${interruptContext}${playerContext}${lorebookBeforeScene}`;
 
     const { text, usage } = await generateText({
       model: getChatModel(),
