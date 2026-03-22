@@ -160,6 +160,14 @@ const builtinChapters: ChapterData[] = [
   },
 ];
 
+import isolatedIslandData from '../data/scripts/isolated-island.json';
+
+export const ISOLATED_ISLAND_SCRIPT_ID = 'isolated-island';
+
+export function createIsolatedIslandScript(): ScriptBundle {
+  return isolatedIslandData as unknown as ScriptBundle;
+}
+
 export function createBuiltinScript(): ScriptBundle {
   return {
     metadata: {

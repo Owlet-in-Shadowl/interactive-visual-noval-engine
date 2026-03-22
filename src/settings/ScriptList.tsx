@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useSettingsStore } from './settings-store';
-import { BUILTIN_SCRIPT_ID } from '../storage/seed';
+import { BUILTIN_SCRIPT_ID, ISOLATED_ISLAND_SCRIPT_ID } from '../storage/seed';
 import type { ScriptMetadata } from '../storage/storage-interface';
 import { T } from '../theme';
 import { Play, Trash2, Download, Pencil } from 'lucide-react';
@@ -67,7 +67,7 @@ export function ScriptList({ onStartGame, onEditScript }: ScriptListProps) {
               onDownload={() => handleDownload(script.id, script.name)}
               onEdit={onEditScript ? () => onEditScript(script.id) : undefined}
               onDelete={
-                script.id !== BUILTIN_SCRIPT_ID
+                script.id !== BUILTIN_SCRIPT_ID && script.id !== ISOLATED_ISLAND_SCRIPT_ID
                   ? () => handleDelete(script.id)
                   : undefined
               }

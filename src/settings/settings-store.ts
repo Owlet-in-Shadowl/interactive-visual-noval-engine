@@ -6,7 +6,7 @@ import { create } from 'zustand';
 import type { IScriptStorage, ScriptMetadata, ScriptBundle } from '../storage/storage-interface';
 import { ScriptBundleSchema } from '../storage/storage-interface';
 import { IDBScriptStorage } from '../storage/idb-storage';
-import { createBuiltinScript, BUILTIN_SCRIPT_ID } from '../storage/seed';
+import { createBuiltinScript, createIsolatedIslandScript, BUILTIN_SCRIPT_ID, ISOLATED_ISLAND_SCRIPT_ID } from '../storage/seed';
 
 export type SettingsTab = 'select' | 'upload' | 'generate' | 'model';
 
@@ -52,8 +52,9 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       const { storage } = get();
       await storage.init();
 
-      // Always re-seed builtin script to keep it up-to-date
+      // Always re-seed builtin scripts to keep them up-to-date
       await storage.saveScript(createBuiltinScript());
+      await storage.saveScript(createIsolatedIslandScript());
 
       set({ initialized: true });
       await get().refreshScripts();
@@ -95,7 +96,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   },
 
   async deleteScript(id: string) {
-    if (id === BUILTIN_SCRIPT_ID) return; // Protect builtin
+    if (id === BUILTIN_SCRIPT_ID || id === ISOLATED_ISLAND_SCRIPT_ID) return; // Protect builtins
     const { storage } = get();
     await storage.deleteScript(id);
     if (get().activeScriptId === id) {

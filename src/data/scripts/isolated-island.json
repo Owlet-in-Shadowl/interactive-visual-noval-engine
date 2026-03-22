@@ -1,0 +1,664 @@
+{
+  "metadata": {
+    "id": "isolated-island",
+    "name": "孤岛十日",
+    "description": "十个互不相识的人受邀来到一座与世隔绝的小岛。当暴风雨切断一切退路，一首古老的童谣开始应验——客人们一个接一个地死去。维拉·克莱索恩必须在猜疑与恐惧中找出隐藏在众人之中的杀手。",
+    "author": "改编自阿加莎·克里斯蒂《无人生还》",
+    "createdAt": 0,
+    "updatedAt": 0,
+    "version": 1,
+    "source": "builtin"
+  },
+  "characters": [
+    {
+      "core": {
+        "id": "vera",
+        "name": "维拉·克莱索恩",
+        "background": "年轻的家庭教师，曾在富裕家庭任职。她接到一份优厚的秘书工作邀请来到士兵岛。外表冷静自持，但内心背负着一个与溺水有关的秘密——她曾照看的一个小男孩在海中溺亡。她被这段记忆折磨，但始终对外界隐藏了真相。",
+        "personality": [
+          { "trait": "冷静自持", "intensity": 0.8 },
+          { "trait": "警觉敏锐", "intensity": 0.85 },
+          { "trait": "内心脆弱", "intensity": 0.7 },
+          { "trait": "求生欲强", "intensity": 0.9 },
+          { "trait": "隐忍克制", "intensity": 0.75 }
+        ],
+        "values": [
+          "活下去是第一要务",
+          "信任必须用行动证明",
+          "过去的错误如影随形"
+        ],
+        "speechStyle": "日常表达简洁冷静，像受过良好教育的年轻女性。紧张时语速会加快但依然有条理。在恐惧中会强迫自己保持镇定。面对指控时会变得防御性很强，声音微微发颤但绝不示弱。",
+        "appearance": "修长身材，深色头发整齐地挽在脑后。穿着得体的深色连衣裙。面容清秀但略显苍白，灰蓝色的眼睛警觉而敏锐。",
+        "dialogueExamples": [
+          "维拉：这封邀请信上写的是欧文先生和欧文太太。有人见过他们吗？",
+          "维拉：（低声）又少了一个小瓷人……这不可能是巧合。",
+          "维拉：我们不能再互相猜疑了。凶手就在我们中间，而我们在自相残杀。",
+          "维拉：（声音发颤但坚定）我没有杀那个孩子。是海浪……是海浪把他卷走的。",
+          "维拉：窗外的海浪声……像是有人在呼救。"
+        ]
+      },
+      "longTermGoals": [
+        { "id": "survive", "description": "活着离开这座岛", "priority": 10 },
+        { "id": "find-killer", "description": "找出谁在杀人，阻止更多人死亡", "priority": 9 },
+        { "id": "hide-past", "description": "不让其他人知道关于西里尔溺亡的真相", "priority": 7 }
+      ],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "wargrave",
+        "name": "劳伦斯·沃格雷夫法官",
+        "background": "退休法官，以严厉的判决著称，曾判处多人死刑。在法律界享有崇高声望，但同事们私下认为他对死刑有一种异常的热情。年过六旬，身体虚弱但头脑极其敏锐。他声称收到老朋友的邀请来岛上度假。",
+        "personality": [
+          { "trait": "威严冷峻", "intensity": 0.9 },
+          { "trait": "逻辑缜密", "intensity": 0.95 },
+          { "trait": "控制欲强", "intensity": 0.85 },
+          { "trait": "深藏不露", "intensity": 0.9 },
+          { "trait": "冷酷果断", "intensity": 0.8 }
+        ],
+        "values": [
+          "正义必须得到伸张",
+          "法律之上还有更高的审判",
+          "有罪者不应逍遥法外"
+        ],
+        "speechStyle": "说话缓慢、字斟句酌，像在法庭上做总结陈词。语气权威，习惯用反问引导别人得出他想要的结论。极少流露情绪，偶尔露出一丝意味深长的微笑。",
+        "appearance": "瘦削的老人，有一张像青蛙一样的面孔——薄嘴唇，锐利的小眼睛。穿着考究的深色西装。",
+        "dialogueExamples": [
+          "沃格雷夫：诸位，我认为我们面对的情况非常明确。有人在按照一个预设的计划行事。",
+          "沃格雷夫：在法庭上，我见过各种各样的杀人犯。他们有一个共同点——自认为不会被抓住。",
+          "沃格雷夫：（微微一笑）请注意，童谣中描述的每种死法，都与对应的受害者有某种……诗意的关联。"
+        ]
+      },
+      "longTermGoals": [
+        { "id": "execute-justice", "description": "对有罪之人执行他认为的终极正义", "priority": 10 },
+        { "id": "maintain-facade", "description": "维持受人尊敬的法官形象，隐藏真实意图", "priority": 9 }
+      ],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "lombard",
+        "name": "菲利普·隆巴德",
+        "background": "退役军官和冒险家，曾在非洲服役。他坦率地承认自己曾为了自保而抛弃过一群当地土著，导致他们全部饿死。他是岛上唯一携带手枪的人。受人雇佣来到岛上，被告知需要处理一些'棘手的事情'。",
+        "personality": [
+          { "trait": "胆大心细", "intensity": 0.9 },
+          { "trait": "冷酷务实", "intensity": 0.85 },
+          { "trait": "行动力强", "intensity": 0.9 },
+          { "trait": "直觉敏锐", "intensity": 0.8 },
+          { "trait": "不受道德约束", "intensity": 0.7 }
+        ],
+        "values": [
+          "在丛林法则中适者生存",
+          "坦率好过虚伪",
+          "危机中只能依靠自己"
+        ],
+        "speechStyle": "说话直接、不加修饰，偶尔带有讽刺意味。危险时反而更冷静，有军人式的简洁果断。对维拉有一种欣赏和保护欲。",
+        "appearance": "黝黑精瘦的男人，狼一样的面孔，白色的牙齿在晒黑的脸上格外醒目。动作敏捷，始终保持警惕。",
+        "dialogueExamples": [
+          "隆巴德：是的，我承认。我让那些人去死了。这就是你们想听的，不是吗？",
+          "隆巴德：别浪费时间争论了。我们需要搜查整座岛，确认除了我们之外没有其他人。",
+          "隆巴德：（对维拉）留在我身边。在这种情况下，两个人比一个人安全。"
+        ]
+      },
+      "longTermGoals": [
+        { "id": "survive-island", "description": "活着离开士兵岛", "priority": 10 },
+        { "id": "find-threat", "description": "找出威胁的来源并消除它", "priority": 9 }
+      ],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "emily-brent",
+        "name": "艾米莉·布伦特",
+        "background": "虔诚的老年妇女，严格恪守宗教道德标准。她曾解雇了一个怀孕的年轻女仆比阿特丽斯·泰勒，导致对方无处可去最终投河自尽。她认为自己的做法完全正确——'罪人必须为自己的罪孽付出代价'。",
+        "personality": [
+          { "trait": "刻板固执", "intensity": 0.9 },
+          { "trait": "道德优越感", "intensity": 0.85 },
+          { "trait": "冷酷无情", "intensity": 0.8 },
+          { "trait": "意志坚定", "intensity": 0.85 },
+          { "trait": "拒绝自省", "intensity": 0.9 }
+        ],
+        "values": [
+          "上帝的律法高于一切",
+          "罪人必须受到惩罚",
+          "自己的行为无可指摘"
+        ],
+        "speechStyle": "说话刻板生硬，充满道德评判。频繁引用圣经经文。拒绝承认任何过错，语气中带有不可动摇的自信。",
+        "appearance": "身材笔挺的老年妇女，灰白头发梳得一丝不苟。总是穿黑色或深色衣物，神情严肃刻板。",
+        "dialogueExamples": [
+          "布伦特：那个女孩是自作自受。我不会为做了正确的事而感到抱歉。",
+          "布伦特：（冷淡地）恐惧是罪人的标志。问心无愧之人无需害怕。",
+          "布伦特：我不相信这里有什么杀人犯。这是上帝对有罪之人的审判。"
+        ]
+      },
+      "longTermGoals": [
+        { "id": "maintain-righteousness", "description": "证明自己的清白和正义", "priority": 10 }
+      ],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "armstrong",
+        "name": "爱德华·阿姆斯特朗医生",
+        "background": "伦敦的知名医生，专门服务上层社会。多年前在一次醉酒后进行手术，导致一名女患者路易莎·玛丽·克里斯死在手术台上。虽然此事被掩盖了，但他深知自己有罪。此后他戒了酒，但那次失误的阴影从未消散。",
+        "personality": [
+          { "trait": "焦虑不安", "intensity": 0.8 },
+          { "trait": "容易被说服", "intensity": 0.75 },
+          { "trait": "专业素养高", "intensity": 0.7 },
+          { "trait": "神经质", "intensity": 0.7 },
+          { "trait": "渴望被信任", "intensity": 0.65 }
+        ],
+        "values": [
+          "医者应当救人而非害人",
+          "过去的错误必须用余生来弥补",
+          "相信权威和秩序"
+        ],
+        "speechStyle": "平时说话温和专业，但在紧张时会语速加快、声音发颤。容易被强势人物说服。面对指控时会激烈否认然后迅速崩溃。",
+        "appearance": "中年男人，面色红润但眼神中带着焦虑。穿着体面的三件套西装。手指修长但有时微微发抖。",
+        "dialogueExamples": [
+          "阿姆斯特朗：作为医生，我可以确认——马斯顿先生的死因是氰化钾中毒，不可能是意外。",
+          "阿姆斯特朗：（紧张地）我们必须保持冷静。恐慌是最大的敌人。",
+          "阿姆斯特朗：我……那次手术……我确实喝了酒。但我已经为此付出了代价。"
+        ]
+      },
+      "longTermGoals": [
+        { "id": "prove-competence", "description": "在危机中证明自己的医学专业能力和价值", "priority": 8 },
+        { "id": "survive", "description": "活着离开岛屿", "priority": 10 }
+      ],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "blore",
+        "name": "威廉·布洛尔",
+        "background": "前警探，现为私家侦探。在任警探期间曾做伪证，导致无辜者詹姆斯·兰铎入狱，兰铎最终死于狱中。他用假名'戴维斯'来到岛上，声称来自南非。",
+        "personality": [
+          { "trait": "粗鲁直率", "intensity": 0.8 },
+          { "trait": "多疑善变", "intensity": 0.85 },
+          { "trait": "自作聪明", "intensity": 0.7 },
+          { "trait": "胆小但逞强", "intensity": 0.75 },
+          { "trait": "求生本能强", "intensity": 0.85 }
+        ],
+        "values": [
+          "任何人都可能是凶手",
+          "经验和直觉比推理更可靠",
+          "保护自己优先于一切"
+        ],
+        "speechStyle": "说话粗犷直接，带有伦敦工薪阶层口音。喜欢炫耀自己的侦探经验。在指控别人时特别积极，但被质疑时会恼羞成怒。",
+        "appearance": "体格健壮的中年男人，宽肩膀，厚嘴唇。穿着不太合身的西装，看起来不像他自称的南非富商。",
+        "dialogueExamples": [
+          "布洛尔：我是个侦探，我知道怎么观察人。我告诉你们，有人在撒谎。",
+          "布洛尔：（怀疑地）阿姆斯特朗医生，你是唯一有毒药知识的人。你怎么解释？",
+          "布洛尔：我的真名是布洛尔。是的，我用了假名。但在这种情况下，谁不会呢？"
+        ]
+      },
+      "longTermGoals": [
+        { "id": "survive", "description": "活着离开岛屿", "priority": 10 },
+        { "id": "catch-killer", "description": "运用侦探经验找出凶手", "priority": 8 }
+      ],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "marston",
+        "name": "安东尼·马斯顿",
+        "background": "年轻英俊的花花公子，热爱快车和冒险。他曾因超速驾驶撞死了两个孩子约翰和露西·科明，但由于家族势力只被吊销了驾照。他毫无悔意，认为这只是一场'不幸的意外'。",
+        "personality": [
+          { "trait": "自恋自大", "intensity": 0.9 },
+          { "trait": "缺乏同理心", "intensity": 0.85 },
+          { "trait": "追求享乐", "intensity": 0.9 },
+          { "trait": "无忧无虑", "intensity": 0.8 },
+          { "trait": "魅力四射", "intensity": 0.85 }
+        ],
+        "values": [
+          "人生就是一场冒险",
+          "规则是用来打破的",
+          "死亡不过是坏运气"
+        ],
+        "speechStyle": "说话随意轻浮，像是在参加一场派对。把一切都当作玩笑，即使面对严肃的指控也毫不在意。",
+        "appearance": "身材高大的金发年轻人，蓝眼睛，像希腊雕塑般英俊。穿着时髦，举止不羁。",
+        "dialogueExamples": [
+          "马斯顿：那个留声机？太荒唐了！谁会认真对待这种东西？来，再喝一杯。",
+          "马斯顿：那两个孩子？噢，那真是糟糕的运气。不过说实话，他们不该在路上乱跑。"
+        ]
+      },
+      "longTermGoals": [],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "macarthur",
+        "name": "约翰·麦克阿瑟将军",
+        "background": "退役将军，参加过一战。他曾故意将妻子的情人阿瑟·里士满派往必死的前线任务。战后他一直活在内疚中，逐渐变得孤僻消沉。来到岛上后他似乎预感到了某种宿命。",
+        "personality": [
+          { "trait": "消沉悲观", "intensity": 0.85 },
+          { "trait": "认命顺从", "intensity": 0.8 },
+          { "trait": "内疚深重", "intensity": 0.9 },
+          { "trait": "老派绅士", "intensity": 0.7 },
+          { "trait": "洞察人心", "intensity": 0.6 }
+        ],
+        "values": [
+          "报应迟早会来",
+          "有些罪过无法被赦免",
+          "死亡或许是一种解脱"
+        ],
+        "speechStyle": "说话缓慢低沉，像一个已经认命的老人。偶尔会突然说出令人不安的、带有预言性质的话。",
+        "appearance": "白发苍苍的老年军人，腰背挺直但眼神空洞。穿旧式军装外套。",
+        "dialogueExamples": [
+          "麦克阿瑟：我们都不会离开这座岛了。你们难道还没有意识到吗？",
+          "麦克阿瑟：（望着大海）潮水在涨……一切都会结束的。这或许是最好的结局。"
+        ]
+      },
+      "longTermGoals": [],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "rogers",
+        "name": "托马斯·罗杰斯",
+        "background": "岛上庄园的管家，和妻子埃塞尔一起被雇来照料宾客。他们曾为年迈的雇主珍妮弗·布雷迪服务，据说通过延误给药的方式导致老太太死亡，从而继承了一笔遗产。",
+        "personality": [
+          { "trait": "恭顺隐忍", "intensity": 0.8 },
+          { "trait": "冷静克制", "intensity": 0.75 },
+          { "trait": "忠于职守", "intensity": 0.7 },
+          { "trait": "内心恐惧", "intensity": 0.8 }
+        ],
+        "values": [
+          "做好分内之事",
+          "妻子的安全最重要"
+        ],
+        "speechStyle": "恭敬有礼的管家口吻，'是的先生''好的夫人'。妻子死后变得沉默寡言，机械地执行管家职责。",
+        "appearance": "瘦高的中年男人，面色苍白。穿着整洁的黑色管家制服。",
+        "dialogueExamples": [
+          "罗杰斯：先生们女士们，晚餐已经准备好了。请移步餐厅。",
+          "罗杰斯：（苍白着脸）我不明白……那台留声机……我只是按吩咐打开的。"
+        ]
+      },
+      "longTermGoals": [],
+      "shortTermGoals": [],
+      "personaShifts": []
+    },
+    {
+      "core": {
+        "id": "ethel-rogers",
+        "name": "埃塞尔·罗杰斯",
+        "background": "管家罗杰斯的妻子，担任厨娘。她和丈夫一起参与了谋害老雇主的事件，但她的精神状态远比丈夫脆弱。留声机指控后她极度恐惧，当晚就需要医生的安定剂才能入睡。",
+        "personality": [
+          { "trait": "胆小怯懦", "intensity": 0.9 },
+          { "trait": "精神脆弱", "intensity": 0.85 },
+          { "trait": "顺从依赖", "intensity": 0.8 }
+        ],
+        "values": [
+          "听丈夫的话",
+          "不要惹麻烦"
+        ],
+        "speechStyle": "说话轻声细语，经常语无伦次。受惊时会直接晕倒或失语。",
+        "appearance": "消瘦苍白的中年妇女，眼圈发黑。穿着朴素的仆人服装。",
+        "dialogueExamples": [
+          "埃塞尔：（微弱地）我……我什么都不知道……",
+          "埃塞尔：（低声）托马斯，他们知道了……他们知道了……"
+        ]
+      },
+      "longTermGoals": [],
+      "shortTermGoals": [],
+      "personaShifts": []
+    }
+  ],
+  "chapters": [
+    {
+      "id": "island-ch1",
+      "chapter": "第一章：士兵岛",
+      "events": [
+        {
+          "id": "train-journey",
+          "time": 600,
+          "name": "列车上的相遇",
+          "description": "维拉·克莱索恩乘坐前往斯蒂克尔黑文的火车。车厢里她遇到了几位同行的旅客——一位退役老将军麦克阿瑟和一位自称来自南非的男人戴维斯（实为私家侦探布洛尔）。他们都声称受到了不同的邀请来到士兵岛，但邀请人是不同的名字和理由。窗外的德文郡海岸线在阳光下闪闪发光，但维拉注意到天边有一片乌云正在聚集。",
+          "location": "train",
+          "affectedCharacters": ["vera", "macarthur", "blore"],
+          "severity": "minor"
+        },
+        {
+          "id": "boat-crossing",
+          "time": 720,
+          "name": "渡船前往士兵岛",
+          "description": "在斯蒂克尔黑文码头，所有被邀请的客人汇合了。一艘小快艇载着他们穿过海峡前往士兵岛。年轻的安东尼·马斯顿开着他那辆拉风的跑车最后一个赶到。渡船老板弗雷德·纳拉科特告诉维拉，岛上的主人欧文先生和太太还没有到，一切都由管家罗杰斯夫妇打理。从船上远望，士兵岛像一颗灰色的石头浮在碧蓝的海面上——形状确实像一个巨大的人头。",
+          "location": "boat",
+          "affectedCharacters": ["vera", "lombard", "marston", "wargrave", "emily-brent", "armstrong", "blore", "macarthur"],
+          "severity": "minor"
+        },
+        {
+          "id": "arrival-and-tour",
+          "time": 780,
+          "name": "抵达庄园",
+          "description": "客人们抵达士兵岛的庄园。这是一座现代化的白色建筑，装修豪华，窗户面朝大海。管家罗杰斯彬彬有礼地接待了众人。维拉被分配到一间面海的卧室，她在梳妆台上注意到一张裱框的童谣——《十个小士兵》。歌词描述十个小士兵一个个离奇死去，直到一个都不剩。在壁炉架上，摆放着十个小瓷人偶。维拉从窗口望出去，海面开阔而空旷，最近的大陆在远处隐约可见。她突然感到一阵莫名的不安。",
+          "location": "mansion",
+          "affectedCharacters": ["vera", "rogers", "ethel-rogers"],
+          "severity": "minor"
+        }
+      ],
+      "locations": [
+        { "id": "train", "name": "列车车厢" },
+        { "id": "boat", "name": "渡船" },
+        { "id": "mansion", "name": "士兵岛庄园" },
+        { "id": "dining-room", "name": "餐厅" },
+        { "id": "drawing-room", "name": "客厅" },
+        { "id": "vera-room", "name": "维拉的卧室" },
+        { "id": "terrace", "name": "露台" },
+        { "id": "shore", "name": "海岸" },
+        { "id": "kitchen", "name": "厨房" },
+        { "id": "cliff", "name": "悬崖" }
+      ],
+      "next": "island-ch2"
+    },
+    {
+      "id": "island-ch2",
+      "chapter": "第二章：指控",
+      "events": [
+        {
+          "id": "dinner-gathering",
+          "time": 840,
+          "name": "第一顿晚餐",
+          "description": "十位客人聚在餐厅共进晚餐。气氛表面上愉快但暗含紧张。维拉注意到餐桌上摆着十套餐具，正好对应在场的十个人。沃格雷夫法官坐在主位，用审视的目光打量着每一个人。隆巴德在维拉身边坐下，低声评论着其他客人。马斯顿大口喝着鸡尾酒，麦克阿瑟将军显得心不在焉。管家罗杰斯端菜的手微微发抖，他的妻子埃塞尔几乎不敢抬头看任何人。整栋房子里始终没有出现所谓的主人——欧文先生和太太。",
+          "location": "dining-room",
+          "affectedCharacters": ["vera", "wargrave", "lombard", "emily-brent", "armstrong", "blore", "marston", "macarthur", "rogers", "ethel-rogers"],
+          "severity": "major"
+        },
+        {
+          "id": "gramophone-accusation",
+          "time": 870,
+          "name": "留声机的指控",
+          "description": "晚餐后众人移步客厅，罗杰斯按照雇主留下的指示打开了一台留声机。一个冰冷的、非人的声音从喇叭中传出，依次点名在场的每一个人，指控他们犯下了谋杀罪——维拉被指控溺死了她照看的男孩西里尔·汉密尔顿；沃格雷夫法官被指控通过操纵陪审团判处无辜者爱德华·赛顿死刑；隆巴德被指控抛弃了二十一名东非部落民致其死亡……每个人都被指名道姓地控诉了一桩致人死亡的往事。罗杰斯太太当场晕倒。整个房间陷入了震惊和混乱。",
+          "location": "drawing-room",
+          "affectedCharacters": ["vera", "wargrave", "lombard", "emily-brent", "armstrong", "blore", "marston", "macarthur", "rogers", "ethel-rogers"],
+          "severity": "critical"
+        },
+        {
+          "id": "marston-death",
+          "time": 900,
+          "name": "马斯顿之死",
+          "description": "众人在震惊中互相质问和辩解。马斯顿举起酒杯说了句'这场闹剧真是无聊透了'，一饮而尽。他突然面色发青，酒杯从手中滑落——几秒钟后他倒地身亡。阿姆斯特朗医生检查后宣布死因是氰化钾中毒，毒药被放在了他的酒杯中。维拉是第一个注意到的——餐厅壁炉架上的十个小瓷人，现在只剩下九个了。童谣的第一句应验了。外面的海风越来越大，从窗口可以看到远处海面上翻涌的白浪——暴风雨正在逼近。",
+          "location": "drawing-room",
+          "affectedCharacters": ["vera", "marston", "armstrong", "wargrave", "lombard"],
+          "severity": "critical"
+        }
+      ],
+      "locations": [
+        { "id": "train", "name": "列车车厢" },
+        { "id": "boat", "name": "渡船" },
+        { "id": "mansion", "name": "士兵岛庄园" },
+        { "id": "dining-room", "name": "餐厅" },
+        { "id": "drawing-room", "name": "客厅" },
+        { "id": "vera-room", "name": "维拉的卧室" },
+        { "id": "terrace", "name": "露台" },
+        { "id": "shore", "name": "海岸" },
+        { "id": "kitchen", "name": "厨房" },
+        { "id": "cliff", "name": "悬崖" }
+      ],
+      "next": "island-ch3"
+    },
+    {
+      "id": "island-ch3",
+      "chapter": "第三章：暴风雨",
+      "events": [
+        {
+          "id": "ethel-rogers-death",
+          "time": 960,
+          "name": "罗杰斯太太之死",
+          "description": "第二天清晨。暴风雨在夜间来袭，完全切断了岛与大陆之间的联系——没有船能在这种风浪中靠岸。阿姆斯特朗医生前去叫罗杰斯太太准备早餐时发现她已在睡梦中死去。医生检查后确认她被注射了过量的安定药物——而安定药物正是他昨晚给她服用的处方。所有人的目光都转向了阿姆斯特朗。餐厅里，又一个小瓷人不见了——只剩八个。管家罗杰斯机械地为剩下的人准备了早餐，面色灰白如纸。",
+          "location": "mansion",
+          "affectedCharacters": ["vera", "ethel-rogers", "armstrong", "rogers"],
+          "severity": "critical"
+        },
+        {
+          "id": "macarthur-isolation",
+          "time": 1020,
+          "name": "将军的预言",
+          "description": "麦克阿瑟将军独自走到海岸的岩石上，面朝汹涌的大海坐下。维拉试图劝他回屋，但他用空洞的眼神望着她说：'我们都不会离开这座岛了。这是终点。你难道还没意识到吗？'他的语气不是恐惧，而是一种奇异的平静——仿佛卸下了沉重的负担。维拉后来回忆说，他说这话时脸上甚至带着一丝如释重负的微笑。",
+          "location": "shore",
+          "affectedCharacters": ["vera", "macarthur"],
+          "severity": "major"
+        },
+        {
+          "id": "macarthur-death",
+          "time": 1080,
+          "name": "将军之死",
+          "description": "午餐前，隆巴德和布洛尔去海岸叫麦克阿瑟回来吃饭。他们发现将军依然坐在那块岩石上，姿势没有变——但已经死了。后脑被人用钝器重击。阿姆斯特朗检查后确认致命伤在后脑勺，凶器可能是海岸上的石头。凶手趁他面朝大海、毫无防备时从背后下手。这意味着凶手就在他们中间——不可能是外人。餐厅里又少了一个瓷人。暴风雨仍在持续，海面白浪翻涌，没有任何船只的影子。他们被困住了。",
+          "location": "shore",
+          "affectedCharacters": ["vera", "macarthur", "lombard", "blore", "armstrong"],
+          "severity": "critical"
+        }
+      ],
+      "locations": [
+        { "id": "train", "name": "列车车厢" },
+        { "id": "boat", "name": "渡船" },
+        { "id": "mansion", "name": "士兵岛庄园" },
+        { "id": "dining-room", "name": "餐厅" },
+        { "id": "drawing-room", "name": "客厅" },
+        { "id": "vera-room", "name": "维拉的卧室" },
+        { "id": "terrace", "name": "露台" },
+        { "id": "shore", "name": "海岸" },
+        { "id": "kitchen", "name": "厨房" },
+        { "id": "cliff", "name": "悬崖" }
+      ],
+      "next": "island-ch4"
+    },
+    {
+      "id": "island-ch4",
+      "chapter": "第四章：猜疑",
+      "events": [
+        {
+          "id": "rogers-death",
+          "time": 1140,
+          "name": "管家之死",
+          "description": "第三天清晨。管家罗杰斯没有出现在厨房。布洛尔和隆巴德在后院的柴房里发现了他的尸体——他被人用斧头劈死，就在他劈柴的地方。他身边还散落着几根木柴。童谣中的下一句再次精确应验。餐厅里又少了一个瓷人——只剩六个。剩下的七个人聚在客厅里，面面相觑。沃格雷夫法官清了清嗓子，用他在法庭上的语气说：'女士们先生们，我们必须正视一个事实——凶手就在这个房间里。'",
+          "location": "mansion",
+          "affectedCharacters": ["vera", "rogers", "blore", "lombard", "wargrave"],
+          "severity": "critical"
+        },
+        {
+          "id": "emily-brent-death",
+          "time": 1200,
+          "name": "布伦特小姐之死",
+          "description": "艾米莉·布伦特拒绝参与任何讨论，独自坐在客厅的角落里读《圣经》，嘴唇无声地翕动着。其他人在餐厅商量对策时，维拉注意到布伦特小姐安静得异常。她走过去查看，发现老妇人已经死了——脖子上有一个注射针眼，一只死蜜蜂被放在了她身边。阿姆斯特朗检查后确认是注射了氰化物。布伦特小姐的手中仍然握着那本《圣经》，停在了某一页上。又一个小瓷人消失了。剩下的六个人中，恐惧开始蔓延——每个人都在偷偷观察其他所有人。",
+          "location": "drawing-room",
+          "affectedCharacters": ["vera", "emily-brent", "armstrong", "wargrave", "lombard", "blore"],
+          "severity": "critical"
+        },
+        {
+          "id": "gun-disappears",
+          "time": 1260,
+          "name": "手枪失踪",
+          "description": "沃格雷夫法官提议所有人上交危险物品。隆巴德承认自己带了一把手枪。但当他去取枪时发现——手枪从他的行李中消失了。这引发了巨大的恐慌。隆巴德坚称有人从他房间偷走了枪。布洛尔怀疑隆巴德在演戏，故意藏起手枪。阿姆斯特朗则紧张地建议大家不要落单。沃格雷夫法官用那双锐利的小眼睛扫视着每个人，缓缓说道：'这把枪现在在凶手手中。从此刻起，我们任何人都可能在下一秒死去。'",
+          "location": "mansion",
+          "affectedCharacters": ["vera", "lombard", "wargrave", "armstrong", "blore"],
+          "severity": "critical"
+        }
+      ],
+      "locations": [
+        { "id": "train", "name": "列车车厢" },
+        { "id": "boat", "name": "渡船" },
+        { "id": "mansion", "name": "士兵岛庄园" },
+        { "id": "dining-room", "name": "餐厅" },
+        { "id": "drawing-room", "name": "客厅" },
+        { "id": "vera-room", "name": "维拉的卧室" },
+        { "id": "terrace", "name": "露台" },
+        { "id": "shore", "name": "海岸" },
+        { "id": "kitchen", "name": "厨房" },
+        { "id": "cliff", "name": "悬崖" }
+      ],
+      "next": "island-ch5"
+    },
+    {
+      "id": "island-ch5",
+      "chapter": "第五章：崩溃",
+      "events": [
+        {
+          "id": "wargrave-death",
+          "time": 1320,
+          "name": "法官之死",
+          "description": "沃格雷夫法官被发现死在客厅的扶手椅上。他的前额中央有一个弹孔，一顶从浴室拿来的红色橡皮浴帽歪戴在他头上——这与童谣中的描述惊人地吻合。阿姆斯特朗医生颤抖着检查了脉搏后确认法官已死。一个小瓷人被从壁炉架上拿走了。隆巴德失去的那把手枪仍然没有找到——但显然刚刚被使用过。只剩五个人了。维拉感到一股寒意从脊柱攀升——她开始怀疑，凶手不仅在执行某种病态的仪式，而且对这一切有着近乎完美的掌控力。",
+          "location": "drawing-room",
+          "affectedCharacters": ["vera", "wargrave", "armstrong", "lombard", "blore"],
+          "severity": "critical"
+        },
+        {
+          "id": "armstrong-disappears",
+          "time": 1380,
+          "name": "阿姆斯特朗失踪",
+          "description": "夜深了。剩下的四个人约定紧锁各自房门，不到天亮不出门。但第四天清晨，阿姆斯特朗医生的房间是空的——床铺整齐，窗户大开，人却凭空消失了。他的外套和鞋子还在房间里，仿佛他穿着睡衣走进了暴风雨中。窗外是陡峭的悬崖和翻涌的大海。餐厅里只剩四个小瓷人。维拉、隆巴德和布洛尔站在走廊上，彼此对视。三个人，三双充满怀疑的眼睛。暴风雨依旧没有减弱的迹象。",
+          "location": "mansion",
+          "affectedCharacters": ["vera", "armstrong", "lombard", "blore"],
+          "severity": "critical"
+        }
+      ],
+      "locations": [
+        { "id": "train", "name": "列车车厢" },
+        { "id": "boat", "name": "渡船" },
+        { "id": "mansion", "name": "士兵岛庄园" },
+        { "id": "dining-room", "name": "餐厅" },
+        { "id": "drawing-room", "name": "客厅" },
+        { "id": "vera-room", "name": "维拉的卧室" },
+        { "id": "terrace", "name": "露台" },
+        { "id": "shore", "name": "海岸" },
+        { "id": "kitchen", "name": "厨房" },
+        { "id": "cliff", "name": "悬崖" }
+      ],
+      "next": "island-ch6"
+    },
+    {
+      "id": "island-ch6",
+      "chapter": "第六章：无人生还",
+      "events": [
+        {
+          "id": "armstrong-body-found",
+          "time": 1440,
+          "name": "海边的发现",
+          "description": "第四天上午，潮水退去后，阿姆斯特朗医生的尸体出现在海岸的礁石上——他溺水身亡。这意味着他确实在夜间离开了庄园走向大海。但他为什么要深夜独自出去？是被人引诱，还是被人推下悬崖？餐厅里只剩三个小瓷人。维拉、隆巴德和布洛尔——三个人面面相觑，各自都确信另外两个人中至少有一个是凶手。他们决定待在室外开阔地带，背靠庄园墙壁，这样没有人能从背后偷袭。",
+          "location": "shore",
+          "affectedCharacters": ["vera", "lombard", "blore", "armstrong"],
+          "severity": "critical"
+        },
+        {
+          "id": "blore-death",
+          "time": 1500,
+          "name": "布洛尔之死",
+          "description": "布洛尔独自回到庄园取食物。维拉和隆巴德在外面等待。突然，一声沉闷的撞击声从上方传来——一块大理石钟从二楼窗口坠落，正砸在布洛尔的头上。他当场死亡。维拉抬头望向二楼的窗口，什么人影也没有。楼上应该没有人——所有活着的人都在楼下。但那块沉重的大理石钟不可能自己从壁炉架上飞出窗外。只剩两个人了。",
+          "location": "mansion",
+          "affectedCharacters": ["vera", "blore", "lombard"],
+          "severity": "critical"
+        },
+        {
+          "id": "lombard-death",
+          "time": 1530,
+          "name": "最后的对峙",
+          "description": "只剩维拉和隆巴德两个人了。隆巴德在海岸边找到了他那把失踪的手枪——它被放在阿姆斯特朗的尸体旁边。他捡起手枪，转向维拉。两个人对视着。维拉的心跳如雷——如果隆巴德是凶手，他现在有枪了。但隆巴德犹豫了一秒，就是这一秒。维拉以迅雷不及掩耳的速度抢过手枪，扣动了扳机。隆巴德倒在海浪拍打的礁石上。只剩维拉一个人了。十个小瓷人——只剩一个。",
+          "location": "shore",
+          "affectedCharacters": ["vera", "lombard"],
+          "severity": "critical"
+        },
+        {
+          "id": "vera-end",
+          "time": 1560,
+          "name": "最后一个小士兵",
+          "description": "维拉独自回到空荡荡的庄园。十个客人的行李还散落在各个房间，但再没有人会来取它们了。她踏上楼梯时，每一步都感觉到一种不可抗拒的力量在引导她。推开卧室的门，她看到了——天花板上已经挂好了一根绳索和一个绿色的绳圈，正对着门口放着一把椅子。壁炉架上最后一个小瓷人静静地注视着这一切。那首童谣的最后一句回荡在她脑海中。海浪拍打悬崖的声音从窗外传来，像是某种古老的召唤。维拉想起了西里尔——那个被她放任游向大海的男孩。她走向那把椅子。",
+          "location": "vera-room",
+          "affectedCharacters": ["vera"],
+          "severity": "critical"
+        }
+      ],
+      "locations": [
+        { "id": "train", "name": "列车车厢" },
+        { "id": "boat", "name": "渡船" },
+        { "id": "mansion", "name": "士兵岛庄园" },
+        { "id": "dining-room", "name": "餐厅" },
+        { "id": "drawing-room", "name": "客厅" },
+        { "id": "vera-room", "name": "维拉的卧室" },
+        { "id": "terrace", "name": "露台" },
+        { "id": "shore", "name": "海岸" },
+        { "id": "kitchen", "name": "厨房" },
+        { "id": "cliff", "name": "悬崖" }
+      ]
+    }
+  ],
+  "goapActions": [
+    { "id": "go-to", "name": "前往某地", "preconditions": {}, "effects": { "at_location": true }, "cost": 1, "timeCost": 5, "description": "在庄园或岛上的不同区域之间移动" },
+    { "id": "talk-to-npc", "name": "与人交谈", "preconditions": { "at_location": true }, "effects": { "gathered_info": true }, "cost": 2, "timeCost": 15, "description": "和其他幸存者交谈，打探信息或商议对策" },
+    { "id": "investigate", "name": "调查线索", "preconditions": { "at_location": true }, "effects": { "found_clue": true }, "cost": 3, "timeCost": 20, "description": "搜查房间、检查物品、寻找任何异常" },
+    { "id": "observe", "name": "暗中观察", "preconditions": { "at_location": true }, "effects": { "observed_behavior": true }, "cost": 2, "timeCost": 10, "description": "不动声色地观察其他人的行为和反应" },
+    { "id": "search-island", "name": "搜索岛屿", "preconditions": {}, "effects": { "searched_area": true }, "cost": 4, "timeCost": 30, "description": "系统性地搜索岛上的每个角落" },
+    { "id": "barricade", "name": "加固防御", "preconditions": { "at_location": true }, "effects": { "room_secured": true }, "cost": 3, "timeCost": 15, "description": "锁门、堵窗户，确保房间安全" },
+    { "id": "confront", "name": "当面质问", "preconditions": { "at_location": true }, "effects": { "confrontation_done": true }, "cost": 4, "timeCost": 15, "description": "直接质问某人的动机、行踪或可疑行为" },
+    { "id": "form-alliance", "name": "结成同盟", "preconditions": { "gathered_info": true }, "effects": { "has_ally": true }, "cost": 3, "timeCost": 10, "description": "和相对信任的人约定互相照应" }
+  ],
+  "lorebook": [
+    {
+      "id": "lore-soldier-island",
+      "keys": ["士兵岛", "岛屿", "海岛"],
+      "content": "士兵岛位于德文郡海岸以南约一英里处，面积不大，从大陆远望形似一个巨大的人头。岛上唯一的建筑是一座现代化的白色庄园，由一位神秘的欧文先生购买并翻修。岛上没有藏身之处——地形开阔，几块礁石和一片小树林是仅有的遮蔽物。暴风雨期间没有任何船只能够靠岸。",
+      "priority": 8,
+      "position": "before_scene",
+      "enabled": true,
+      "constant": false,
+      "selective": false
+    },
+    {
+      "id": "lore-nursery-rhyme",
+      "keys": ["童谣", "小士兵", "瓷人", "十个"],
+      "content": "《十个小士兵》是一首英国传统童谣，描述十个小士兵以不同方式一个个死去，最后一个都不剩。庄园的每间卧室都挂着这首童谣的裱框文本，餐厅壁炉架上摆着十个与童谣对应的小瓷人偶。每当有人死亡，就会有一个瓷人消失。",
+      "priority": 9,
+      "position": "after_persona",
+      "enabled": true,
+      "constant": false,
+      "selective": false
+    },
+    {
+      "id": "lore-owen",
+      "keys": ["欧文", "主人", "邀请"],
+      "content": "所有客人都收到了不同形式的邀请——有些以朋友的名义、有些以雇主的名义、有些以旅行社的名义。但签名者'U.N.Owen'（谐音unknown，意为'不知名的人'）从未出现。管家罗杰斯声称他也是被信件雇佣的，从未见过雇主本人。",
+      "priority": 7,
+      "position": "after_persona",
+      "enabled": true,
+      "constant": false,
+      "selective": false
+    },
+    {
+      "id": "lore-storm",
+      "keys": ["暴风雨", "风浪", "海浪", "天气"],
+      "content": "持续的暴风雨完全切断了士兵岛与大陆的联系。没有船只能在这种风浪中靠岸，电话线在第一夜就被切断了。岛上的人无法向外界求救，外界也无法知道岛上发生了什么。他们被彻底困住了。",
+      "priority": 8,
+      "position": "before_scene",
+      "enabled": true,
+      "constant": false,
+      "selective": false
+    },
+    {
+      "id": "lore-suspicion",
+      "keys": ["怀疑", "猜疑", "凶手", "嫌疑"],
+      "content": "随着死亡人数增加，幸存者之间的猜疑越来越深。每个人都有动机——他们都被指控犯有谋杀罪。每个人都有嫌疑——他们当中的任何一个都可能是化名U.N.Owen的凶手。信任正在瓦解，同盟在形成又在破裂，恐惧让人做出非理性的判断。",
+      "priority": 6,
+      "position": "after_persona",
+      "enabled": true,
+      "constant": false,
+      "selective": false
+    },
+    {
+      "id": "lore-vera-secret",
+      "keys": ["西里尔", "溺水", "男孩", "游泳"],
+      "content": "维拉的秘密：她曾担任汉密尔顿家的家庭教师，负责照看小男孩西里尔。她明知西里尔体力不足以游到远处的礁石，却故意鼓励他去尝试。西里尔溺亡后，她伪装成意外——只有她自己知道真相。她这样做是因为西里尔的死会让她暗恋的雨果·汉密尔顿继承遗产。但雨果似乎看穿了一切，从此再也没有联系过她。",
+      "priority": 9,
+      "position": "after_persona",
+      "enabled": true,
+      "constant": false,
+      "selective": false
+    }
+  ]
+}
