@@ -179,6 +179,11 @@ export function App() {
       const typeStr = scene.type as string;
       if (typeStr === 'debug-prompt') continue; // skip debug entries
 
+      if (typeStr === 'chapter-transition') {
+        lines.push(`\n---\n\n## ${scene.narration || '新章节'}\n`);
+        continue;
+      }
+
       if (typeStr === 'player-input') {
         lines.push(`> 🎮 玩家：${scene.dialogue || ''}\n`);
         continue;
@@ -188,12 +193,15 @@ export function App() {
         lines.push(`*${scene.narration}*\n`);
       }
 
+      // Treat "null" string as actual null (Director sometimes returns "null" as speaker)
+      const speaker = scene.speaker && scene.speaker !== 'null' ? scene.speaker : null;
+
       if (scene.type === 'thought') {
-        lines.push(`💭 ${scene.speaker ?? ''}（内心）：${scene.dialogue || ''}\n`);
-      } else if (scene.speaker) {
-        lines.push(`**${scene.speaker}**：${scene.dialogue || ''}\n`);
+        lines.push(`💭 ${speaker ?? ''}（内心）：${scene.dialogue || ''}\n`);
+      } else if (speaker) {
+        lines.push(`**${speaker}**：${scene.dialogue || ''}\n`);
       } else {
-        lines.push(`${scene.dialogue || scene.narration || ''}\n`);
+        lines.push(`*${scene.dialogue || scene.narration || ''}*\n`);
       }
     }
 

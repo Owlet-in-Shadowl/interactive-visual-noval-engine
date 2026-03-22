@@ -145,6 +145,13 @@ export class CoreLoop {
       this.chapterExhausted = true;
       const transitioned = await this.resolveNextChapter();
       if (transitioned) return; // 切换成功，下一轮会从新章节开始
+
+      // 最后一章结束，没有后续章节 → 停止循环
+      if (!transitioned && this.isLastChapter()) {
+        debug.pushError('[核心循环] 所有章节已结束，停止循环');
+        this.stop();
+        return;
+      }
     }
 
     // ─── 快速路径：预置场景（PF 信源） ───
@@ -718,6 +725,14 @@ export class CoreLoop {
   }
 
   /**
+   * Check if the current chapter is the last one (no `next` field).
+   */
+  private isLastChapter(): boolean {
+    const current = this.config.chapters[this.currentChapterIndex];
+    return !current?.next;
+  }
+
+  /**
    * Gather NPC personas from CharacterStore (all characters except POV).
    */
   private gatherNpcPersonas() {
@@ -883,6 +898,15 @@ export class CoreLoop {
     this.currentChapterIndex = targetIndex;
     this.chapterExhausted = false;
     this.narrativeMemory.setChapter(target.chapter);
+
+    // Emit a chapter transition scene for the renderer (shows in history + export)
+    const transitionScene: SceneOutput = {
+      speaker: null,
+      dialogue: '',
+      narration: target.chapter,
+      type: 'chapter-transition' as SceneOutput['type'],
+    };
+    this.config.onScenesReady([transitionScene]);
 
     // 通知外部
     this.config.onChapterTransition?.(current, target);

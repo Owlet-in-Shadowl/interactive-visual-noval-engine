@@ -125,8 +125,8 @@ export function GameRenderer({
   useEffect(() => {
     if (currentScene || queue.length === 0) return;
     const [next, ...rest] = queue;
-    if ((next.type as string) === 'debug-prompt') {
-      // Auto-advance prompt markers to history without displaying
+    if ((next.type as string) === 'debug-prompt' || (next.type as string) === 'chapter-transition') {
+      // Auto-advance markers to history without displaying as a scene
       setHistory((h) => [...h, next]);
       setQueue(rest);
       return;
@@ -525,6 +525,16 @@ function HistoryEntry({ scene }: { scene: SceneOutput }) {
     return <DebugPromptEntry prompt={text} />;
   }
 
+  if ((scene.type as string) === 'chapter-transition') {
+    return (
+      <div style={styles.chapterTransition}>
+        <span style={styles.chapterTransitionLine} />
+        <span style={styles.chapterTransitionLabel}>{scene.narration || '新章节'}</span>
+        <span style={styles.chapterTransitionLine} />
+      </div>
+    );
+  }
+
   if (isPlayerInput) {
     return (
       <div style={styles.historyPlayerInput}>
@@ -771,6 +781,27 @@ const styles: Record<string, React.CSSProperties> = {
     fontStyle: 'italic',
     fontSize: '14px',
     margin: 0,
+  },
+  // ─── Chapter transition styles ────────
+  chapterTransition: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    margin: '20px 0',
+    padding: '8px 0',
+  },
+  chapterTransitionLine: {
+    flex: 1,
+    height: '1px',
+    background: T.accent,
+    opacity: 0.4,
+  },
+  chapterTransitionLabel: {
+    color: T.accent,
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: T.fontSerif,
+    whiteSpace: 'nowrap' as const,
   },
   // ─── Debug prompt styles ──────────────
   debugPromptEntry: {
