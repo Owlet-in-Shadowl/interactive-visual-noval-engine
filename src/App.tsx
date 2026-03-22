@@ -25,7 +25,7 @@ import type { SceneOutput, WorldEvent, GOAPAction } from './memory/schemas';
 import { normalizeChapters } from './storage/storage-interface';
 import { ScriptEditor } from './editor/ScriptEditor';
 import { T } from './theme';
-import { Settings, Play, Pause, Square, Download } from 'lucide-react';
+import { Settings, Play, Pause, Square, Download, FastForward } from 'lucide-react';
 
 type AppView = 'start' | 'settings' | 'game' | 'editor';
 
@@ -44,6 +44,7 @@ export function App() {
   const debug = useDebugStore();
   // playerMode kept for AI pipeline compatibility
   const _playerMode = usePlayerStore((s) => s.mode);
+  const autoPlay = usePlayerStore((s) => s.autoPlay);
 
   // Settings store
   const settingsInitialized = useSettingsStore((s) => s.initialized);
@@ -314,6 +315,15 @@ export function App() {
               </button>
               <button style={styles.controlBtn} onClick={handleStop}>
                 <Square size={12} strokeWidth={1.5} /> 停止
+              </button>
+              <button
+                style={{
+                  ...styles.controlBtn,
+                  ...(autoPlay ? { background: T.accent, color: 'white' } : {}),
+                }}
+                onClick={() => usePlayerStore.getState().setAutoPlay(!autoPlay)}
+              >
+                <FastForward size={12} strokeWidth={1.5} /> {autoPlay ? '停止全自动' : '全自动'}
               </button>
               <button style={styles.controlBtn} onClick={handleExportText}>
                 <Download size={12} strokeWidth={1.5} /> 导出
