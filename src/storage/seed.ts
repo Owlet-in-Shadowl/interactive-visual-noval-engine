@@ -9,6 +9,7 @@ import type { CharacterState, GOAPAction, WorldEvent } from '../memory/schemas';
 // Static imports (same data that was previously hardcoded in App.tsx)
 import liyaData from '../data/characters/liya.json';
 import guardCaptainData from '../data/characters/guard-captain.json';
+import hermanData from '../data/characters/herman.json';
 import chapter1Data from '../data/world-events/chapter1.json';
 import goapActionsData from '../data/goap-actions.json';
 
@@ -78,18 +79,18 @@ const ch3bEvents: WorldEvent[] = [
     id: 'escort-herman',
     time: 900,
     name: '宵禁突围',
-    description: '莉娅搀扶着年迈的赫尔曼穿过宵禁后寂静的街道。远处传来卫兵巡逻的脚步声和火把的光芒，她必须带导师避开所有巡逻路线，从城镇北门悄悄离开。',
+    description: '莉娅搀扶着年迈的赫尔曼穿过宵禁后寂静的街道。月光映在灰石墙面上，远处传来卫兵巡逻的脚步声和火把劈啪作响的声音。赫尔曼背着一个旧书包，里面装着他从壁炉暗格中取出的最后几本手稿。他们必须避开马库斯在城门设置的所有哨卡。赫尔曼低声告诉莉娅：北门的排水渠在夜间无人看守，那是他年轻时发现的秘密通道。',
     location: 'town-square',
-    affectedCharacters: ['liya'],
+    affectedCharacters: ['liya', 'herman'],
     severity: 'major',
   },
   {
     id: 'forest-ambush',
     time: 960,
     name: '林中伏击',
-    description: '刚踏入城外的松林，树影中突然闪出几道黑影。有人早已在此设伏——显然，图书馆的火只是诱饵，他们真正的目标是赫尔曼。老学者紧握莉娅的手，低声说出了一个莉娅从未听过的名字。',
+    description: '刚踏入城外的松林，树影中突然闪出几道黑影。三个穿黑衣的人堵住了去路，他们不是卫兵——没有盔甲，没有火把，但每人腰间都挂着匕首。领头的人用沙哑的声音说："老先生，您的那些文件，莫兰大人需要收回。"赫尔曼紧握莉娅的手，他的掌心冰凉却没有发抖。他低声说出了一个名字——"克洛维斯·莫兰。他就是当年指控你父亲的人。"',
     location: 'town-gate',
-    affectedCharacters: ['liya'],
+    affectedCharacters: ['liya', 'herman'],
     severity: 'critical',
   },
 ];
@@ -165,6 +166,7 @@ export function createBuiltinScript(): ScriptBundle {
     characters: [
       liyaData as CharacterState,
       guardCaptainData as CharacterState,
+      hermanData as CharacterState,
     ],
     chapters: builtinChapters,
     goapActions: goapActionsData as unknown as GOAPAction[],
