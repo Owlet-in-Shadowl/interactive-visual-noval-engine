@@ -25,7 +25,7 @@ import type { SceneOutput, WorldEvent, GOAPAction } from './memory/schemas';
 import { normalizeChapters } from './storage/storage-interface';
 import { ScriptEditor } from './editor/ScriptEditor';
 import { T } from './theme';
-import { Settings, Play, Pause, Square } from 'lucide-react';
+import { Settings, Play, Pause, Square, Download } from 'lucide-react';
 
 type AppView = 'start' | 'settings' | 'game' | 'editor';
 
@@ -165,6 +165,47 @@ export function App() {
     }
   }, []);
 
+  const handleExportText = useCallback(() => {
+    const scenes = useDebugStore.getState().sceneHistory;
+    if (scenes.length === 0) return;
+
+    const lines: string[] = [];
+    lines.push(`# ${activeScript?.metadata.name ?? '导出文本'}\n`);
+    lines.push(`导出时间：${new Date().toLocaleString('zh-CN')}\n`);
+    lines.push('---\n');
+
+    for (const scene of scenes) {
+      const typeStr = scene.type as string;
+      if (typeStr === 'debug-prompt') continue; // skip debug entries
+
+      if (typeStr === 'player-input') {
+        lines.push(`> 🎮 玩家：${scene.dialogue || ''}\n`);
+        continue;
+      }
+
+      if (scene.narration && scene.dialogue) {
+        lines.push(`*${scene.narration}*\n`);
+      }
+
+      if (scene.type === 'thought') {
+        lines.push(`💭 ${scene.speaker ?? ''}（内心）：${scene.dialogue || ''}\n`);
+      } else if (scene.speaker) {
+        lines.push(`**${scene.speaker}**：${scene.dialogue || ''}\n`);
+      } else {
+        lines.push(`${scene.dialogue || scene.narration || ''}\n`);
+      }
+    }
+
+    const text = lines.join('\n');
+    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${activeScript?.metadata.name ?? 'novel'}-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [activeScript]);
+
   // Derive display info from active script
   const primaryChar = activeScript?.characters[0];
   const charName = primaryChar?.core.name ?? '';
@@ -273,6 +314,9 @@ export function App() {
               </button>
               <button style={styles.controlBtn} onClick={handleStop}>
                 <Square size={12} strokeWidth={1.5} /> 停止
+              </button>
+              <button style={styles.controlBtn} onClick={handleExportText}>
+                <Download size={12} strokeWidth={1.5} /> 导出
               </button>
               <span style={styles.modeIndicator}>
                 {activeScript?.metadata.name ?? ''}

@@ -313,11 +313,12 @@ export function GameRenderer({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingMessage]);
 
-  // Auto-scroll history
+  // Auto-scroll history + sync to debug store for export
   useEffect(() => {
     if (historyRef.current) {
       historyRef.current.scrollTop = historyRef.current.scrollHeight;
     }
+    useDebugStore.getState().setSceneHistory(history);
   }, [history, displayed]);
 
   // ─── Divergence choice: trigger LLM description generation ───
