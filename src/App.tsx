@@ -170,49 +170,68 @@ export function App() {
     const scenes = useDebugStore.getState().sceneHistory;
     if (scenes.length === 0) return;
 
-    const lines: string[] = [];
-    lines.push(`# ${activeScript?.metadata.name ?? '导出文本'}\n`);
-    lines.push(`导出时间：${new Date().toLocaleString('zh-CN')}\n`);
-    lines.push('---\n');
+    const name = activeScript?.metadata.name ?? 'novel';
+    const ts = Date.now();
+    const timeStr = new Date().toLocaleString('zh-CN');
 
-    for (const scene of scenes) {
-      const typeStr = scene.type as string;
-      if (typeStr === 'debug-prompt') continue; // skip debug entries
+    const formatScenes = (includePrompts: boolean) => {
+      const lines: string[] = [];
+      lines.push(`# ${name}${includePrompts ? '（含 Director Prompt）' : ''}\n`);
+      lines.push(`导出时间：${timeStr}\n`);
+      lines.push('---\n');
 
-      if (typeStr === 'chapter-transition') {
-        lines.push(`\n---\n\n## ${scene.narration || '新章节'}\n`);
-        continue;
+      for (const scene of scenes) {
+        const typeStr = scene.type as string;
+
+        if (typeStr === 'debug-prompt') {
+          if (includePrompts) {
+            lines.push(`\n<details><summary>🔧 Director Prompt</summary>\n\n\`\`\`\n${scene.dialogue || ''}\n\`\`\`\n</details>\n`);
+          }
+          continue;
+        }
+
+        if (typeStr === 'chapter-transition') {
+          lines.push(`\n---\n\n## ${scene.narration || '新章节'}\n`);
+          continue;
+        }
+
+        if (typeStr === 'player-input') {
+          lines.push(`> 🎮 玩家：${scene.dialogue || ''}\n`);
+          continue;
+        }
+
+        if (scene.narration && scene.dialogue) {
+          lines.push(`*${scene.narration}*\n`);
+        }
+
+        const speaker = scene.speaker && scene.speaker !== 'null' ? scene.speaker : null;
+
+        if (scene.type === 'thought') {
+          lines.push(`💭 ${speaker ?? ''}（内心）：${scene.dialogue || ''}\n`);
+        } else if (speaker) {
+          lines.push(`**${speaker}**：${scene.dialogue || ''}\n`);
+        } else {
+          lines.push(`*${scene.dialogue || scene.narration || ''}*\n`);
+        }
       }
+      return lines.join('\n');
+    };
 
-      if (typeStr === 'player-input') {
-        lines.push(`> 🎮 玩家：${scene.dialogue || ''}\n`);
-        continue;
-      }
+    // Download helper
+    const download = (content: string, filename: string) => {
+      const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
 
-      if (scene.narration && scene.dialogue) {
-        lines.push(`*${scene.narration}*\n`);
-      }
-
-      // Treat "null" string as actual null (Director sometimes returns "null" as speaker)
-      const speaker = scene.speaker && scene.speaker !== 'null' ? scene.speaker : null;
-
-      if (scene.type === 'thought') {
-        lines.push(`💭 ${speaker ?? ''}（内心）：${scene.dialogue || ''}\n`);
-      } else if (speaker) {
-        lines.push(`**${speaker}**：${scene.dialogue || ''}\n`);
-      } else {
-        lines.push(`*${scene.dialogue || scene.narration || ''}*\n`);
-      }
-    }
-
-    const text = lines.join('\n');
-    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${activeScript?.metadata.name ?? 'novel'}-${Date.now()}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
+    // Export clean version
+    download(formatScenes(false), `${name}-${ts}.md`);
+    // Export debug version with prompts (slight delay to avoid browser blocking)
+    setTimeout(() => download(formatScenes(true), `${name}-debug-${ts}.md`), 100);
   }, [activeScript]);
 
   // Derive display info from active script
