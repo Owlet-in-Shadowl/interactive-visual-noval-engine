@@ -903,7 +903,7 @@
     {
       "id": "lore-soldier-island",
       "keys": ["士兵岛", "岛屿", "海岛"],
-      "content": "士兵岛位于德文郡海岸以南约一英里处，面积不大，从大陆远望形似一个巨大的人头。岛上唯一的建筑是一座现代化的白色庄园，由一位神秘的欧文先生购买并翻修。岛上没有藏身之处——地形开阔，几块礁石和一片小树林是仅有的遮蔽物。暴风雨期间没有任何船只能够靠岸。",
+      "content": "士兵岛位于德文郡海岸以南约一英里处，面积不大，从大陆远望形似一个巨大的人头。岛上唯一的建筑是一座现代化的白色庄园，由一位神秘的欧文先生购买并翻修。岛上没有藏身之处——地形开阔，几块礁石和一片小树林是仅有的遮蔽物。",
       "priority": 8,
       "position": "before_scene",
       "enabled": true,
@@ -938,7 +938,8 @@
       "position": "before_scene",
       "enabled": true,
       "constant": false,
-      "selective": false
+      "selective": false,
+      "availableAfterEvent": "no-boat"
     },
     {
       "id": "lore-suspicion",
@@ -947,6 +948,7 @@
       "priority": 6,
       "position": "after_persona",
       "enabled": true,
+      "availableAfterEvent": "marston-death",
       "constant": false,
       "selective": false
     },

@@ -10,16 +10,26 @@ import type { LorebookEntry } from '../storage/storage-interface';
 /**
  * Find lorebook entries triggered by the given text.
  * Returns entries sorted by priority (highest first).
+ *
+ * @param text - Text to scan for keyword matches
+ * @param entries - All lorebook entries
+ * @param consumedEventIds - Set of event IDs that have already been triggered (for time-gating)
  */
 export function matchLorebook(
   text: string,
   entries: LorebookEntry[],
+  consumedEventIds?: Set<string>,
 ): LorebookEntry[] {
   const lowerText = text.toLowerCase();
   const matched: LorebookEntry[] = [];
 
   for (const entry of entries) {
     if (!entry.enabled) continue;
+
+    // Time-gating: skip entries that require an event that hasn't happened yet
+    if (entry.availableAfterEvent && consumedEventIds) {
+      if (!consumedEventIds.has(entry.availableAfterEvent)) continue;
+    }
 
     // Constant entries are always active
     if (entry.constant) {

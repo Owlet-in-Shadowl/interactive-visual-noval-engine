@@ -61,6 +61,8 @@ export class CoreLoop {
   private completedActions: { actionId: string; actionName: string; goalWhat: string; timestamp: number }[] = [];
   /** Last Director output text — fallback for recentSceneText when narrativeContext not available */
   private lastDirectorSceneText: string = '';
+  /** Set of event IDs that have been consumed (for lorebook time-gating) */
+  private consumedEventIds: Set<string> = new Set();
   private divergence: {
     point: DivergencePoint;
     scores: Map<string, number>;
@@ -206,8 +208,8 @@ export class CoreLoop {
 
     // Inject completed actions into cognition context to prevent goal repetition
     if (this.completedActions.length > 0) {
-      const recentCompleted = this.completedActions.slice(-5);
-      const completedBlock = `\n\n## 已完成的行动（不要重复规划这些行动，推进到新的目标）：\n${recentCompleted.map((a) => `- ✅ ${a.actionName}：${a.goalWhat}`).join('\n')}`;
+      const recentCompleted = this.completedActions.slice(-8);
+      const completedBlock = `\n\n## 重要：你已经完成了以下行动，禁止再次规划相同或相似的目标：\n${recentCompleted.map((a) => `- ✅ [已完成] ${a.goalWhat}（通过行动"${a.actionName}"）`).join('\n')}\n\n你必须规划一个全新的、不同的目标。思考：在当前局势下，还有什么没做过的事情需要去做？`;
       const sysMsg = assembled.messages.find((m) => m.role === 'system');
       if (sysMsg) sysMsg.content += completedBlock;
     }
@@ -415,7 +417,7 @@ export class CoreLoop {
     });
 
     // 7.5 Apply event-triggered goal changes
-    this.applyEventGoalChanges(event);
+    this.consumeEvent(event);
 
     // 8. 后处理
     await contextEngine.afterTurn({
@@ -468,7 +470,7 @@ export class CoreLoop {
     });
 
     // Apply event-triggered goal changes
-    this.applyEventGoalChanges(event);
+    this.consumeEvent(event);
 
     // Mark current goal as interrupted
     const charStore = useCharacterStore.getState();
@@ -510,6 +512,7 @@ export class CoreLoop {
       interrupted: true,
       playerMessage: playerMessage ?? undefined,
       lorebookEntries: this.config.lorebookEntries,
+      consumedEventIds: this.consumedEventIds,
       recentSceneText: this.getRecentSceneText(),
       narrativeContext,
     });
@@ -592,6 +595,7 @@ export class CoreLoop {
       interrupted,
       playerMessage: playerMessage ?? undefined,
       lorebookEntries: this.config.lorebookEntries,
+      consumedEventIds: this.consumedEventIds,
       recentSceneText: this.getRecentSceneText(),
       narrativeContext,
     });
@@ -741,7 +745,14 @@ export class CoreLoop {
   /**
    * Apply event-triggered goal changes to characters.
    */
-  private applyEventGoalChanges(event: WorldEvent) {
+  /**
+   * Mark an event as consumed: track its ID for lorebook time-gating + apply goal changes.
+   */
+  private consumeEvent(event: WorldEvent) {
+    // Track consumed event ID for lorebook availableAfterEvent filtering
+    this.consumedEventIds.add(event.id);
+
+    // Apply goal changes
     if (!event.goalChanges?.length) return;
     const charStore = useCharacterStore.getState();
     const debug = useDebugStore.getState();

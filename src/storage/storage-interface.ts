@@ -72,6 +72,8 @@ export const LorebookEntrySchema = z.object({
     .describe('优先级（数字越大越优先，超出 token 预算时低优先级被裁剪）'),
   position: z.enum(['before_persona', 'after_persona', 'before_scene']).optional().default('after_persona')
     .describe('注入位置'),
+  availableAfterEvent: z.string().optional()
+    .describe('仅在指定事件ID已触发后才激活此条目（时间感知）'),
 });
 
 // ─── Full Script Bundle Schema ─────────────────────────

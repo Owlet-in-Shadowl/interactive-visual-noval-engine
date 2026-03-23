@@ -134,15 +134,35 @@ export class NarrativeMemory {
   /**
    * Director 输出后调用：将本轮场景写入层1窗口
    * 如果窗口溢出，最旧的一轮压缩为摘要移入层2
+   * Deduplication: skips if the last window entry has the same action + similar text
    */
   ingest(scenes: SceneOutput[], action: string) {
+    // Dedup: check if last window entry is essentially the same content
+    if (this.window.length > 0) {
+      const last = this.window[this.window.length - 1];
+      if (last.action === action && last.chapter === this.currentChapter) {
+        // Same action in same chapter — check text similarity
+        const lastText = scenesToText(last.scenes).slice(0, 100);
+        const newText = scenesToText(scenes).slice(0, 100);
+        if (lastText === newText) {
+          return; // Skip duplicate
+        }
+      }
+    }
+
     this.window.push({ scenes, action, chapter: this.currentChapter });
 
     // 窗口溢出 → 最旧的压缩为摘要
     while (this.window.length > this.config.windowSize) {
       const oldest = this.window.shift()!;
       const summary = compressToSummary(oldest.scenes, oldest.chapter, oldest.action);
-      this.summaries.push(summary);
+      // Dedup summaries: skip if an identical summary already exists
+      const isDuplicate = this.summaries.some(
+        (s) => s.action === summary.action && s.chapter === summary.chapter && s.summary === summary.summary,
+      );
+      if (!isDuplicate) {
+        this.summaries.push(summary);
+      }
     }
   }
 

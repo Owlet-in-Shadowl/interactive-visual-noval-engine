@@ -30,6 +30,7 @@ export interface DirectorInput {
   interrupted?: boolean;
   playerMessage?: string;
   lorebookEntries?: LorebookEntry[];
+  consumedEventIds?: Set<string>;
   recentSceneText?: string;
   narrativeContext?: NarrativeContext;
 }
@@ -124,7 +125,7 @@ export class SinglePovDirector implements IDirector {
         input.recentSceneText ?? '',
         input.worldEvent?.description ?? '',
       ].join(' ');
-      const matched = matchLorebook(scanText, input.lorebookEntries);
+      const matched = matchLorebook(scanText, input.lorebookEntries, input.consumedEventIds);
       lorebookBeforePersona = buildLorebookContext(matched, 'before_persona');
       lorebookAfterPersona = buildLorebookContext(matched, 'after_persona');
       lorebookBeforeScene = buildLorebookContext(matched, 'before_scene');
