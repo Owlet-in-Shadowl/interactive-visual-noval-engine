@@ -414,6 +414,9 @@ export class CoreLoop {
       },
     });
 
+    // 7.5 Apply event-triggered goal changes
+    this.applyEventGoalChanges(event);
+
     // 8. 后处理
     await contextEngine.afterTurn({
       sessionId: this.sessionId,
@@ -463,6 +466,9 @@ export class CoreLoop {
         content: `[世界事件] ${event.name}：${event.description}（地点：${event.location}）`,
       },
     });
+
+    // Apply event-triggered goal changes
+    this.applyEventGoalChanges(event);
 
     // Mark current goal as interrupted
     const charStore = useCharacterStore.getState();
@@ -730,6 +736,23 @@ export class CoreLoop {
   private isLastChapter(): boolean {
     const current = this.config.chapters[this.currentChapterIndex];
     return !current?.next;
+  }
+
+  /**
+   * Apply event-triggered goal changes to characters.
+   */
+  private applyEventGoalChanges(event: WorldEvent) {
+    if (!event.goalChanges?.length) return;
+    const charStore = useCharacterStore.getState();
+    const debug = useDebugStore.getState();
+    for (const change of event.goalChanges) {
+      charStore.applyGoalChanges(change.characterId, change.addGoals, change.removeGoalIds);
+      const added = change.addGoals?.map((g) => g.description).join(', ') ?? '';
+      const removed = change.removeGoalIds?.join(', ') ?? '';
+      debug.pushError(
+        `[目标变更] ${change.characterId}: ${added ? `+${added}` : ''}${removed ? ` -${removed}` : ''} (触发: ${event.name})`,
+      );
+    }
   }
 
   /**
