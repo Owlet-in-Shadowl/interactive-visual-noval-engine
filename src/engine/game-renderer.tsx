@@ -13,17 +13,20 @@
  *   - Thinking flow: player input triggers memory recall + inner monologue
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { SceneOutput } from '../memory/schemas';
 import type { IFullContextEngine } from '../memory/context-engine';
 import { usePlayerStore } from '../player/player-store';
 import { useCharacterStore } from '../memory/character-store';
 import { runThinking } from '../agents/thinking';
+import { runBranchDescriber } from '../agents/branch-describer';
 import { T } from '../theme';
 import {
   Smile, Frown, Angry,
   AlertCircle, Eye, Flame, Brain, MessageCircle,
+  GitBranch, Loader2, Code2, ChevronDown, ChevronRight,
 } from 'lucide-react';
+import { useDebugStore } from '../debug/debug-store';
 import type { ComponentType } from 'react';
 import type { LucideProps } from 'lucide-react';
 
@@ -90,23 +93,71 @@ export function GameRenderer({
   const historyRef = useRef<HTMLDivElement>(null);
   const lastScenesRef = useRef<SceneOutput[]>([]);
 
+  // Build character ID → display name mapping
+  const characters = useCharacterStore((s) => s.characters);
+  const speakerNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const [id, char] of Object.entries(characters)) {
+      if (char.core) map[id] = char.core.name;
+    }
+    return map;
+  }, [characters]);
+  const resolveSpeaker = useCallback((id: string | null) => {
+    if (!id) return null;
+    return speakerNameMap[id] || id;
+  }, [speakerNameMap]);
+  // No extra state needed — prompt markers are inserted as special SceneOutput entries in history
+
   const autoAdvance = usePlayerStore((s) => s.autoAdvance);
   const thinking = usePlayerStore((s) => s.thinking);
+  const activeDivergence = usePlayerStore((s) => s.activeDivergence);
+  const branchDescriptions = usePlayerStore((s) => s.branchDescriptions);
+  const debugCollapsed = useDebugStore((s) => s.phase === 'idle' ? false : true); // always track
+  const lastDirectorPrompt = useDebugStore((s) => s.lastDirectorPrompt);
 
   // When new scenes arrive from core-loop, enqueue them
+  // If debug panel is open, prepend a prompt marker scene
   useEffect(() => {
     if (scenes.length === 0 || scenes === lastScenesRef.current) return;
     lastScenesRef.current = scenes;
-    setQueue((q) => [...q, ...scenes]);
+    const prompt = lastDirectorPrompt;
+    if (prompt) {
+      // Insert a special "prompt marker" as the first item in this batch
+      const promptMarker: SceneOutput = {
+        speaker: null,
+        dialogue: prompt,
+        type: 'debug-prompt' as SceneOutput['type'],
+      };
+      setQueue((q) => [...q, promptMarker, ...scenes]);
+    } else {
+      setQueue((q) => [...q, ...scenes]);
+    }
   }, [scenes]);
 
   // Dequeue: when no scene is currently displayed, take the next from queue
+  // Debug-prompt markers go straight to history (not displayed as scenes)
   useEffect(() => {
     if (currentScene || queue.length === 0) return;
     const [next, ...rest] = queue;
+    if ((next.type as string) === 'debug-prompt' || (next.type as string) === 'chapter-transition') {
+      // Auto-advance markers to history without displaying as a scene
+      setHistory((h) => [...h, next]);
+      setQueue(rest);
+      return;
+    }
     setCurrentScene(next);
     setQueue(rest);
   }, [currentScene, queue]);
+
+  // Sync povSpeaking: true when current scene's speaker is the POV character
+  // This controls whether the player can trigger thinking in ChatInput
+  useEffect(() => {
+    const isPov = currentScene?.speaker === characterId
+      || currentScene?.type === 'thought'
+      || currentScene?.type === 'player-input'
+      || (currentScene?.speaker === null && !currentScene?.type);  // narration counts as POV context
+    usePlayerStore.getState().setPovSpeaking(!!isPov);
+  }, [currentScene, characterId]);
 
   // Get display text for typewriter
   const displayText = currentScene
@@ -117,15 +168,30 @@ export function GameRenderer({
   const typewriterSpeed = isPlayerInput ? 20 : isThought ? 30 : 40;
   const { displayed, isComplete, skipToEnd } = useTypewriter(displayText, typewriterSpeed);
 
-  // AUTO mode: auto-advance after typewriter completes
+  // AUTO mode auto-advance
+  // - player-input during thinking: stay put (thinking completion handles transition)
+  // - player-input after thinking: auto-advance quickly (player knows what they typed)
+  // - all other scenes (including thought): follow AUTO toggle
   useEffect(() => {
-    if (!autoAdvance || !isComplete || !currentScene || thinking) return;
-    const timer = setTimeout(() => {
-      advanceScene();
-    }, 2000);
-    return () => clearTimeout(timer);
+    if (!isComplete || !currentScene) return;
+
+    // During thinking, player-input stays put
+    if (isPlayerInput && thinking) return;
+
+    // Player input (thinking done): auto-advance quickly
+    if (isPlayerInput) {
+      const timer = setTimeout(() => advanceScene(), 400);
+      return () => clearTimeout(timer);
+    }
+
+    // All other scenes (dialogue, narration, thought): follow AUTO toggle
+    if (autoAdvance && !thinking) {
+      const delay = isThought ? 1500 : 2000;
+      const timer = setTimeout(() => advanceScene(), delay);
+      return () => clearTimeout(timer);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoAdvance, isComplete, currentScene, thinking]);
+  }, [autoAdvance, isComplete, currentScene, thinking, isPlayerInput, isThought]);
 
   // Advance to next scene
   const advanceScene = useCallback(() => {
@@ -139,11 +205,12 @@ export function GameRenderer({
     if (queue.length === 0 && usePlayerStore.getState().presetScenesActive) {
       usePlayerStore.getState().endPresetSequence();
     }
-  }, [currentScene, queue.length]);
+  }, [currentScene, queue]);
 
   // Click handler: skip typewriter → advance to next scene
+  // Blocked during thinking to prevent race conditions with the thinking flow
   const handleAdvance = useCallback(() => {
-    if (!currentScene) return;
+    if (!currentScene || thinking) return;
 
     // If typewriter still running, skip to end first
     if (!isComplete) {
@@ -152,7 +219,7 @@ export function GameRenderer({
     }
 
     advanceScene();
-  }, [currentScene, isComplete, skipToEnd, advanceScene]);
+  }, [currentScene, thinking, isComplete, skipToEnd, advanceScene]);
 
   // ─── Thinking flow ───────────────────────────────────────
   // Listen for pendingMessage and trigger thinking
@@ -224,6 +291,21 @@ export function GameRenderer({
           setCurrentScene(null);
           setQueue(savedQueue);
         }
+
+        // 3. Write thinking results back to episodic memory (层次1)
+        // The character "remembers" what they thought about
+        for (const scene of result.scenes) {
+          const thoughtContent = `[内心思考] 关于"${question}"：${scene.dialogue || ''}`;
+          await contextEngine.ingest({
+            sessionId,
+            message: { role: 'assistant', content: thoughtContent },
+          });
+        }
+        // Also ingest the player's question as observation
+        await contextEngine.ingest({
+          sessionId,
+          message: { role: 'user', content: `[玩家思考] ${question}` },
+        });
       } catch (err) {
         console.error('[Thinking] Failed:', err);
         // Insert a fallback thought scene
@@ -245,12 +327,48 @@ export function GameRenderer({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingMessage]);
 
-  // Auto-scroll history
+  // Auto-scroll history + sync to debug store for export
   useEffect(() => {
     if (historyRef.current) {
       historyRef.current.scrollTop = historyRef.current.scrollHeight;
     }
+    useDebugStore.getState().setSceneHistory(history);
   }, [history, displayed]);
+
+  // ─── Divergence choice: trigger LLM description generation ───
+  useEffect(() => {
+    if (!activeDivergence) return;
+    const recentSummary = history
+      .slice(-8)
+      .map((s) => {
+        const text = s.dialogue || s.narration || '';
+        return s.speaker ? `${s.speaker}：${text}` : text;
+      })
+      .join('\n');
+
+    runBranchDescriber({
+      branches: activeDivergence.branches.map((b) => ({
+        label: b.label,
+        gravityDescription: b.gravityDescription,
+      })),
+      recentScenesSummary: recentSummary,
+      characterName,
+    })
+      .then((descriptions) => {
+        usePlayerStore.getState().setBranchDescriptions(descriptions);
+      })
+      .catch((err) => {
+        console.error('[BranchDescriber] Failed:', err);
+        // Fallback: use gravityDescription directly
+        const fallback = activeDivergence.branches.map((b) => b.gravityDescription);
+        usePlayerStore.getState().setBranchDescriptions(fallback);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDivergence]);
+
+  const handleBranchChoice = useCallback((targetChapterId: string) => {
+    usePlayerStore.getState().resolveDivergenceChoice(targetChapterId);
+  }, []);
 
   const emotionIcons: Record<string, ComponentType<LucideProps> | null> = {
     neutral: null,
@@ -277,7 +395,7 @@ export function GameRenderer({
         {/* History scroll */}
         <div ref={historyRef} style={styles.history}>
           {history.map((h, i) => (
-            <HistoryEntry key={i} scene={h} />
+            <HistoryEntry key={i} scene={h} resolveSpeaker={resolveSpeaker} />
           ))}
         </div>
       </div>
@@ -307,7 +425,7 @@ export function GameRenderer({
                   <Brain size={14} style={{ color: T.info, flexShrink: 0 }} />
                 )}
                 <span style={isThought ? styles.thoughtSpeakerName : styles.speakerName}>
-                  {currentScene.speaker}
+                  {resolveSpeaker(currentScene.speaker)}
                   {isThought && <span style={styles.thoughtLabel}>(内心)</span>}
                 </span>
                 {currentScene.emotion && !isThought && (
@@ -340,8 +458,44 @@ export function GameRenderer({
         </div>
       )}
 
+      {/* ─── Divergence choice panel ─── */}
+      {activeDivergence && (
+        <div style={styles.choicePanel}>
+          <div style={styles.choiceHeader}>
+            <GitBranch size={16} style={{ color: T.accent }} />
+            <span style={styles.choiceTitle}>命运的岔路</span>
+          </div>
+          <div style={styles.choiceList}>
+            {activeDivergence.branches.map((branch, i) => (
+              <button
+                key={branch.targetChapterId}
+                style={styles.choiceButton}
+                onClick={() => handleBranchChoice(branch.targetChapterId)}
+                onMouseEnter={(e) => {
+                  Object.assign(e.currentTarget.style, styles.choiceButtonHover);
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = T.accent;
+                  e.currentTarget.style.background = T.bgSurface;
+                }}
+              >
+                <span style={styles.choiceLabel}>{branch.label}</span>
+                {branchDescriptions?.[i] ? (
+                  <span style={styles.choiceDesc}>{branchDescriptions[i]}</span>
+                ) : (
+                  <span style={styles.choiceDescLoading}>
+                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                    正在构思...
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Empty state when no scene and no queue */}
-      {!currentScene && queue.length === 0 && history.length === 0 && (
+      {!currentScene && !activeDivergence && queue.length === 0 && history.length === 0 && (
         <div style={styles.dialogueBox}>
           <p style={styles.emptyHint}>等待叙事生成...</p>
         </div>
@@ -352,10 +506,48 @@ export function GameRenderer({
 
 // ─── History entry sub-component ────────────────────────────
 
-function HistoryEntry({ scene }: { scene: SceneOutput }) {
+function DebugPromptEntry({ prompt }: { prompt: string }) {
+  const [expanded, setExpanded] = useState(false);
+  // Only show when debug panel exists (always render but check debug state)
+  const phase = useDebugStore((s) => s.phase);
+  if (!phase) return null;
+
+  return (
+    <div
+      style={styles.debugPromptEntry}
+      onClick={() => setExpanded(!expanded)}
+    >
+      <div style={styles.debugPromptHeader}>
+        {expanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+        <Code2 size={10} />
+        <span>Director Prompt</span>
+      </div>
+      {expanded && (
+        <pre style={styles.debugPromptContent}>{prompt}</pre>
+      )}
+    </div>
+  );
+}
+
+function HistoryEntry({ scene, resolveSpeaker }: { scene: SceneOutput; resolveSpeaker: (id: string | null) => string | null }) {
   const text = scene.dialogue || scene.narration || '';
   const isThought = scene.type === 'thought';
   const isPlayerInput = scene.type === 'player-input';
+  const isDebugPrompt = (scene.type as string) === 'debug-prompt';
+
+  if (isDebugPrompt) {
+    return <DebugPromptEntry prompt={text} />;
+  }
+
+  if ((scene.type as string) === 'chapter-transition') {
+    return (
+      <div style={styles.chapterTransition}>
+        <span style={styles.chapterTransitionLine} />
+        <span style={styles.chapterTransitionLabel}>{scene.narration || '新章节'}</span>
+        <span style={styles.chapterTransitionLine} />
+      </div>
+    );
+  }
 
   if (isPlayerInput) {
     return (
@@ -372,7 +564,7 @@ function HistoryEntry({ scene }: { scene: SceneOutput }) {
         <Brain size={11} style={{ color: T.info, flexShrink: 0, marginTop: 3 }} />
         <p style={styles.historyThoughtText}>
           {scene.speaker && (
-            <span style={styles.historyThoughtSpeaker}>{scene.speaker}(内心)：</span>
+            <span style={styles.historyThoughtSpeaker}>{resolveSpeaker(scene.speaker)}(内心)：</span>
           )}
           {text}
         </p>
@@ -387,7 +579,7 @@ function HistoryEntry({ scene }: { scene: SceneOutput }) {
       )}
       {scene.speaker ? (
         <p style={styles.historyDialogue}>
-          <span style={styles.speakerName}>{scene.speaker}</span>
+          <span style={styles.speakerName}>{resolveSpeaker(scene.speaker)}</span>
           ：{text}
         </p>
       ) : (
@@ -603,5 +795,122 @@ const styles: Record<string, React.CSSProperties> = {
     fontStyle: 'italic',
     fontSize: '14px',
     margin: 0,
+  },
+  // ─── Chapter transition styles ────────
+  chapterTransition: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    margin: '20px 0',
+    padding: '8px 0',
+  },
+  chapterTransitionLine: {
+    flex: 1,
+    height: '1px',
+    background: T.accent,
+    opacity: 0.4,
+  },
+  chapterTransitionLabel: {
+    color: T.accent,
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: T.fontSerif,
+    whiteSpace: 'nowrap' as const,
+  },
+  // ─── Debug prompt styles ──────────────
+  debugPromptEntry: {
+    margin: '8px 0',
+    padding: '4px 8px',
+    background: `color-mix(in srgb, ${T.bg} 80%, ${T.info} 20%)`,
+    borderRadius: T.radius,
+    border: `1px solid ${T.info}`,
+    opacity: 0.6,
+    cursor: 'pointer',
+    fontSize: '10px',
+    fontFamily: T.fontMono,
+    color: T.textTertiary,
+  },
+  debugPromptHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    color: T.info,
+    fontWeight: 500,
+    userSelect: 'none' as const,
+  },
+  debugPromptContent: {
+    margin: '6px 0 2px',
+    padding: '6px',
+    background: T.bg,
+    borderRadius: T.radius,
+    fontSize: '9px',
+    lineHeight: '1.5',
+    whiteSpace: 'pre-wrap' as const,
+    wordBreak: 'break-all' as const,
+    maxHeight: '300px',
+    overflowY: 'auto' as const,
+    color: T.textTertiary,
+  },
+  // ─── Choice panel styles ─────────────
+  choicePanel: {
+    background: T.bgSurface,
+    borderRadius: `${T.radiusXl} ${T.radiusXl} 0 0`,
+    padding: '20px 24px',
+    flexShrink: 0,
+    boxShadow: T.shadowCard,
+  },
+  choiceHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '16px',
+  },
+  choiceTitle: {
+    fontSize: '16px',
+    fontWeight: 600,
+    color: T.accent,
+    fontFamily: T.fontSerif,
+  },
+  choiceList: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '10px',
+  },
+  choiceButton: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '4px',
+    padding: '14px 18px',
+    background: T.bgSurface,
+    border: `1px solid ${T.accent}`,
+    borderRadius: T.radius,
+    cursor: 'pointer',
+    textAlign: 'left' as const,
+    transition: 'all 0.2s ease',
+    outline: 'none',
+  },
+  choiceButtonHover: {
+    borderColor: T.gold,
+    background: `color-mix(in srgb, ${T.bgSurface} 85%, ${T.accent} 15%)`,
+  },
+  choiceLabel: {
+    fontSize: '15px',
+    fontWeight: 600,
+    color: T.textPrimary,
+    fontFamily: T.fontSerif,
+  },
+  choiceDesc: {
+    fontSize: '13px',
+    color: T.textSecondary,
+    lineHeight: '1.6',
+    fontFamily: T.fontSerif,
+  },
+  choiceDescLoading: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '12px',
+    color: T.textMuted,
+    fontFamily: T.fontSans,
   },
 };

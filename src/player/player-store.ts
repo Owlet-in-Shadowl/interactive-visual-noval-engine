@@ -12,6 +12,7 @@
  */
 
 import { create } from 'zustand';
+import type { DivergencePoint } from '../storage/storage-interface';
 
 export interface ChatMessage {
   id: string;
@@ -28,7 +29,15 @@ export interface PlayerState {
 
   // New interaction model
   autoAdvance: boolean;    // AUTO 模式：自动推进场景
+  autoPlay: boolean;       // 全自动模式：AUTO + 分歧自动选择 defaultBranch
   thinking: boolean;       // 正在思考中（思考 Agent 运行中）
+  povSpeaking: boolean;    // POV 角色正在说话（允许思考）
+  divergenceActive: boolean; // 分歧点活跃（玩家行为影响剧情走向）
+
+  // Divergence choice (传统选项模式, maxFreeActions=0)
+  activeDivergence: DivergencePoint | null;
+  branchDescriptions: string[] | null;  // LLM 生成的选项描述
+  divergenceChoiceResolver: ((chapterId: string) => void) | null;
 
   // Message queue
   pendingMessage: string | null;
@@ -45,7 +54,14 @@ export interface PlayerState {
   toggleAutoPause: () => void;
   toggleDynamicGoap: () => void;
   toggleAutoAdvance: () => void;
+  setAutoPlay: (v: boolean) => void;
   setThinking: (v: boolean) => void;
+  setPovSpeaking: (v: boolean) => void;
+  setDivergenceActive: (v: boolean) => void;
+  setActiveDivergence: (d: DivergencePoint | null) => void;
+  setBranchDescriptions: (d: string[] | null) => void;
+  beginDivergenceChoice: (d: DivergencePoint) => Promise<string>;
+  resolveDivergenceChoice: (chapterId: string) => void;
   sendMessage: (content: string) => void;
   consumePendingMessage: () => string | null;
   addNarratorMessage: (content: string) => void;
@@ -64,7 +80,13 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   autoPauseOnTaskDone: false,
   dynamicGoapEnabled: false,
   autoAdvance: false,
+  autoPlay: false,
   thinking: false,
+  povSpeaking: false,
+  divergenceActive: false,
+  activeDivergence: null,
+  branchDescriptions: null,
+  divergenceChoiceResolver: null,
   pendingMessage: null,
   chatHistory: [],
   presetScenesActive: false,
@@ -93,8 +115,54 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set((s) => ({ autoAdvance: !s.autoAdvance }));
   },
 
+  setAutoPlay: (v) => {
+    set({ autoPlay: v, autoAdvance: v }); // autoPlay implies autoAdvance
+  },
+
   setThinking: (v) => {
     set({ thinking: v });
+  },
+
+  setPovSpeaking: (v) => {
+    set({ povSpeaking: v });
+  },
+
+  setDivergenceActive: (v) => {
+    set({ divergenceActive: v });
+  },
+
+  setActiveDivergence: (d) => {
+    set({ activeDivergence: d });
+  },
+
+  setBranchDescriptions: (d) => {
+    set({ branchDescriptions: d });
+  },
+
+  beginDivergenceChoice: (d) => {
+    // In autoPlay mode, immediately resolve with defaultBranch
+    if (get().autoPlay) {
+      return Promise.resolve(d.defaultBranch);
+    }
+    return new Promise<string>((resolve) => {
+      set({
+        activeDivergence: d,
+        divergenceChoiceResolver: resolve,
+        branchDescriptions: null,
+        divergenceActive: true,
+      });
+    });
+  },
+
+  resolveDivergenceChoice: (chapterId) => {
+    const resolver = get().divergenceChoiceResolver;
+    set({
+      activeDivergence: null,
+      divergenceChoiceResolver: null,
+      branchDescriptions: null,
+      divergenceActive: false,
+    });
+    if (resolver) resolver(chapterId);
   },
 
   sendMessage: (content) => {

@@ -12,6 +12,9 @@ import { CharacterPanel } from './player/CharacterPanel';
 import { SettingsScreen } from './settings/SettingsScreen';
 import { CoreLoop } from './engine/core-loop';
 import { NovelContextEngine } from './memory/context-engine';
+import type { IFullContextEngine } from './memory/context-engine';
+import { Mem0ContextEngine } from './memory/mem0-context-engine';
+import { ObservableContextEngine } from './memory/observable-context-engine';
 import { useCharacterStore } from './memory/character-store';
 import { useDebugStore } from './debug/debug-store';
 import { usePlayerStore } from './player/player-store';
@@ -19,9 +22,10 @@ import { useSettingsStore } from './settings/settings-store';
 import { useModelConfigStore } from './settings/model-config-store';
 import { Timeline } from './timeline/timeline';
 import type { SceneOutput, WorldEvent, GOAPAction } from './memory/schemas';
+import { normalizeChapters } from './storage/storage-interface';
 import { ScriptEditor } from './editor/ScriptEditor';
 import { T } from './theme';
-import { Settings, Play, Pause, Square } from 'lucide-react';
+import { Settings, Play, Pause, Square, Download, FastForward } from 'lucide-react';
 
 type AppView = 'start' | 'settings' | 'game' | 'editor';
 
@@ -33,13 +37,14 @@ export function App() {
   const [activeGoapActions, setActiveGoapActions] = useState<GOAPAction[]>([]);
   const coreLoopRef = useRef<CoreLoop | null>(null);
   const timelineRef = useRef<Timeline | null>(null);
-  const contextEngineRef = useRef<NovelContextEngine | null>(null);
+  const contextEngineRef = useRef<IFullContextEngine | null>(null);
 
   const resetCharacters = useCharacterStore((s) => s.resetAll);
   const initCharacter = useCharacterStore((s) => s.initCharacter);
   const debug = useDebugStore();
   // playerMode kept for AI pipeline compatibility
   const _playerMode = usePlayerStore((s) => s.mode);
+  const autoPlay = usePlayerStore((s) => s.autoPlay);
 
   // Settings store
   const settingsInitialized = useSettingsStore((s) => s.initialized);
@@ -61,14 +66,19 @@ export function App() {
     coreLoopRef.current?.stop();
     coreLoopRef.current = null;
 
-    // Clear stale character data from previous runs, then initialize
+    // Clear stale debug + character data from previous runs
+    const debug = useDebugStore.getState();
+    debug.reset();
     resetCharacters();
     for (const character of script.characters) {
       initCharacter(character.core.id, character);
     }
 
+    // Normalize chapters (auto-assign IDs to those missing them)
+    const chapters = normalizeChapters(script.chapters);
+
     // Use first chapter for timeline
-    const chapter = script.chapters[0];
+    const chapter = chapters[0];
     const timeline = new Timeline(
       480, // 08:00
       chapter.events as WorldEvent[],
@@ -76,15 +86,26 @@ export function App() {
     );
     timelineRef.current = timeline;
 
-    const contextEngine = new NovelContextEngine(() =>
-      timeline.buildWorldState(
-        'home',
-        script.characters.slice(1).map((c) => c.core.id), // NPCs = all characters except first
-        timeline.getActiveEvents().length > 0
-          ? timeline.getActiveEvents().map((e) => e.description).join('；')
-          : `${timeline.formatTime()}，一切平静。`,
-      ),
+    const getWorldState = () => timeline.buildWorldState(
+      'home',
+      script.characters.slice(1).map((c) => c.core.id),
+      timeline.getActiveEvents().length > 0
+        ? timeline.getActiveEvents().map((e) => e.description).join('；')
+        : `${timeline.formatTime()}，一切平静。`,
     );
+
+    // Create memory engine based on config
+    const memConfig = useModelConfigStore.getState().memoryConfig;
+    let rawEngine: IFullContextEngine;
+    if (memConfig.provider === 'mem0' && memConfig.mem0ApiKey) {
+      const userId = `novel-${script.metadata.id}-${script.characters[0].core.id}`;
+      rawEngine = new Mem0ContextEngine(memConfig.mem0ApiKey, userId, getWorldState);
+      debug.pushError(`[记忆模块] 使用 Mem0 Cloud (user: ${userId})`);
+    } else {
+      rawEngine = new NovelContextEngine(getWorldState);
+      debug.pushError(`[记忆模块] 使用内置引擎`);
+    }
+    const contextEngine = new ObservableContextEngine(rawEngine);
     contextEngineRef.current = contextEngine;
 
     const primaryCharId = script.characters[0].core.id;
@@ -97,6 +118,8 @@ export function App() {
       contextEngine,
       timeline,
       goapActions: runtimeActions,
+      chapters,
+      lorebookEntries: script.lorebook ?? [],
       onScenesReady: (newScenes) => {
         setScenes(newScenes);
       },
@@ -142,6 +165,85 @@ export function App() {
       loop.resume();
     }
   }, []);
+
+  const handleExportText = useCallback(() => {
+    const scenes = useDebugStore.getState().sceneHistory;
+    if (scenes.length === 0) return;
+
+    const name = activeScript?.metadata.name ?? 'novel';
+    const ts = Date.now();
+    const timeStr = new Date().toLocaleString('zh-CN');
+
+    // Build speaker ID → display name map for export
+    const charStore = useCharacterStore.getState();
+    const speakerMap: Record<string, string> = {};
+    for (const [id, char] of Object.entries(charStore.characters)) {
+      if (char.core) speakerMap[id] = char.core.name;
+    }
+    const resolveName = (id: string | null) => {
+      if (!id || id === 'null') return null;
+      return speakerMap[id] || id;
+    };
+
+    const formatScenes = (includePrompts: boolean) => {
+      const lines: string[] = [];
+      lines.push(`# ${name}${includePrompts ? '（含 Director Prompt）' : ''}\n`);
+      lines.push(`导出时间：${timeStr}\n`);
+      lines.push('---\n');
+
+      for (const scene of scenes) {
+        const typeStr = scene.type as string;
+
+        if (typeStr === 'debug-prompt') {
+          if (includePrompts) {
+            lines.push(`\n<details><summary>Director Prompt</summary>\n\n\`\`\`\n${scene.dialogue || ''}\n\`\`\`\n</details>\n`);
+          }
+          continue;
+        }
+
+        if (typeStr === 'chapter-transition') {
+          lines.push(`\n---\n\n## ${scene.narration || '新章节'}\n`);
+          continue;
+        }
+
+        if (typeStr === 'player-input') {
+          lines.push(`> 玩家：${scene.dialogue || ''}\n`);
+          continue;
+        }
+
+        if (scene.narration && scene.dialogue) {
+          lines.push(`*${scene.narration}*\n`);
+        }
+
+        const speaker = resolveName(scene.speaker);
+
+        if (scene.type === 'thought') {
+          lines.push(`${speaker ?? ''}（内心）：${scene.dialogue || ''}\n`);
+        } else if (speaker) {
+          lines.push(`**${speaker}**：${scene.dialogue || ''}\n`);
+        } else {
+          lines.push(`*${scene.dialogue || scene.narration || ''}*\n`);
+        }
+      }
+      return lines.join('\n');
+    };
+
+    // Download helper
+    const download = (content: string, filename: string) => {
+      const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    // Export clean version
+    download(formatScenes(false), `${name}-${ts}.md`);
+    // Export debug version with prompts (slight delay to avoid browser blocking)
+    setTimeout(() => download(formatScenes(true), `${name}-debug-${ts}.md`), 100);
+  }, [activeScript]);
 
   // Derive display info from active script
   const primaryChar = activeScript?.characters[0];
@@ -251,6 +353,18 @@ export function App() {
               </button>
               <button style={styles.controlBtn} onClick={handleStop}>
                 <Square size={12} strokeWidth={1.5} /> 停止
+              </button>
+              <button
+                style={{
+                  ...styles.controlBtn,
+                  ...(autoPlay ? { background: T.accent, color: 'white' } : {}),
+                }}
+                onClick={() => usePlayerStore.getState().setAutoPlay(!autoPlay)}
+              >
+                <FastForward size={12} strokeWidth={1.5} /> {autoPlay ? '停止全自动' : '全自动'}
+              </button>
+              <button style={styles.controlBtn} onClick={handleExportText}>
+                <Download size={12} strokeWidth={1.5} /> 导出
               </button>
               <span style={styles.modeIndicator}>
                 {activeScript?.metadata.name ?? ''}

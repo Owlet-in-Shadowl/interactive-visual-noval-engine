@@ -26,9 +26,27 @@ export interface AgentTrace {
   inputTokens: number;
   outputTokens: number;
   timestamp: number;
+  /** Optional summary of what went in (truncated for display) */
+  inputSummary?: string;
+  /** Optional summary of what came out (truncated for display) */
+  outputSummary?: string;
+}
+
+export interface MemoryLog {
+  method: string;
+  timestamp: number;
+  durationMs: number;
+  input: unknown;
+  output: unknown;
+  error?: string;
 }
 
 export interface DebugState {
+  /** Latest Director system prompt (for inline debug in GameRenderer) */
+  lastDirectorPrompt: string;
+  /** Full scene history for export (synced from GameRenderer) */
+  sceneHistory: SceneOutput[];
+
   // Core loop phase
   phase: GamePhase;
   prevPhase: GamePhase;
@@ -71,6 +89,9 @@ export interface DebugState {
   // Error log
   errors: Array<{ message: string; timestamp: number }>;
 
+  // Memory module logs (ContextEngine observability)
+  memoryLogs: MemoryLog[];
+
   // Actions
   setPhase: (phase: GamePhase) => void;
   setCurrentGoal: (goal: Goal5W1H, rawJson: string) => void;
@@ -80,7 +101,10 @@ export interface DebugState {
   setTimeline: (tl: DebugState['timeline']) => void;
   pushTrace: (trace: AgentTrace) => void;
   setScenes: (scenes: SceneOutput[]) => void;
+  setLastDirectorPrompt: (prompt: string) => void;
+  setSceneHistory: (scenes: SceneOutput[]) => void;
   pushError: (message: string) => void;
+  pushMemoryLog: (log: MemoryLog) => void;
   incrementLoop: () => void;
   reset: () => void;
 }
@@ -88,6 +112,8 @@ export interface DebugState {
 export const useDebugStore = create<DebugState>()((set) => ({
   phase: 'idle',
   prevPhase: 'idle',
+  lastDirectorPrompt: '',
+  sceneHistory: [],
   phaseStartedAt: 0,
   phaseDurations: {},
   loopCount: 0,
@@ -100,6 +126,7 @@ export const useDebugStore = create<DebugState>()((set) => ({
   traces: [],
   currentScenes: [],
   errors: [],
+  memoryLogs: [],
 
   setPhase: (phase) =>
     set((s) => {
@@ -135,12 +162,17 @@ export const useDebugStore = create<DebugState>()((set) => ({
     set((s) => ({ traces: [...s.traces.slice(-19), trace] })),
 
   setScenes: (scenes) => set({ currentScenes: scenes }),
+  setLastDirectorPrompt: (prompt) => set({ lastDirectorPrompt: prompt }),
+  setSceneHistory: (scenes) => set({ sceneHistory: scenes }),
 
   pushError: (message) =>
     set((s) => ({
       errors: [...s.errors.slice(-9), { message, timestamp: Date.now() }],
       phase: 'error' as GamePhase,
     })),
+
+  pushMemoryLog: (log) =>
+    set((s) => ({ memoryLogs: [...s.memoryLogs.slice(-49), log] })),
 
   incrementLoop: () =>
     set((s) => ({ loopCount: s.loopCount + 1, phaseDurations: {} })),
@@ -160,5 +192,8 @@ export const useDebugStore = create<DebugState>()((set) => ({
       traces: [],
       currentScenes: [],
       errors: [],
+      memoryLogs: [],
+      lastDirectorPrompt: '',
+      sceneHistory: [],
     }),
 }));

@@ -16,6 +16,8 @@ export const CorePersonaSchema = z.object({
   values: z.array(z.string()),
   speechStyle: z.string(),
   appearance: z.string().optional(),
+  dialogueExamples: z.array(z.string()).optional()
+    .describe('角色对话示例（fewshot），控制说话风格的频率和质感。包含正例（典型对话）和反例（不应出现的风格）'),
 });
 
 export const PersonaShiftSchema = z.object({
@@ -50,6 +52,12 @@ export const ShortTermGoalSchema = z.object({
 
 // ─── 世界事件 Schema ─────────────────────────────────────
 
+export const GoalChangeSchema = z.object({
+  characterId: z.string().describe('目标角色ID'),
+  addGoals: z.array(LongTermGoalSchema).optional().describe('新增长期目标'),
+  removeGoalIds: z.array(z.string()).optional().describe('移除长期目标（按ID）'),
+});
+
 export const WorldEventSchema = z.object({
   id: z.string(),
   time: z.number().describe('事件发生的游戏时间（分钟）'),
@@ -63,6 +71,9 @@ export const WorldEventSchema = z.object({
     .describe('参与框架序列。有 → 预置模式（渲染和记忆从 frames 投影），无 → AI 模式'),
   anchorLevel: z.enum(['fixed', 'strong', 'soft']).optional()
     .describe('锚点强度。fixed=不可改变, strong=AI须收敛, soft=可跳过'),
+  // ─── 事件触发的目标变更 ───
+  goalChanges: z.array(GoalChangeSchema).optional()
+    .describe('事件触发时自动修改角色的长期目标'),
 });
 
 export const WorldStateSchema = z.object({
@@ -135,6 +146,7 @@ export type PersonaShift = z.infer<typeof PersonaShiftSchema>;
 export type LongTermGoal = z.infer<typeof LongTermGoalSchema>;
 export type Goal5W1H = z.infer<typeof Goal5W1HSchema>;
 export type ShortTermGoal = z.infer<typeof ShortTermGoalSchema>;
+export type GoalChange = z.infer<typeof GoalChangeSchema>;
 export type WorldEvent = z.infer<typeof WorldEventSchema>;
 export type WorldState = z.infer<typeof WorldStateSchema>;
 export type GOAPWorldState = z.infer<typeof GOAPWorldStateSchema>;

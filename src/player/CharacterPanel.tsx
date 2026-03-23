@@ -1,16 +1,17 @@
 /**
- * CharacterPanel - Collapsible left-side panel showing character info and actions.
- * Displays persona details, personality traits, current goal, and GOAP action library.
+ * CharacterPanel - Collapsible left-side panel showing ALL characters.
+ * POV character shown first with full details (goals, actions).
+ * NPC characters shown after with basic persona info.
  */
 
 import { useState } from 'react';
 import { useCharacterStore } from '../memory/character-store';
 import { useDebugStore } from '../debug/debug-store';
-import type { GOAPAction } from '../memory/schemas';
+import type { GOAPAction, CharacterState } from '../memory/schemas';
 import { T } from '../theme';
 import {
   ChevronRight, ChevronLeft, ChevronDown,
-  MapPin, Clock, Users, Timer, Coins,
+  MapPin, Clock, Users, Timer, Coins, Eye,
 } from 'lucide-react';
 
 interface CharacterPanelProps {
@@ -20,6 +21,7 @@ interface CharacterPanelProps {
 
 export function CharacterPanel({ characterId, goapActions }: CharacterPanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const [expandedChars, setExpandedChars] = useState<Record<string, boolean>>({ [characterId]: true });
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     persona: true,
     traits: true,
@@ -27,150 +29,200 @@ export function CharacterPanel({ characterId, goapActions }: CharacterPanelProps
     actions: false,
   });
 
-  const character = useCharacterStore((s) => s.characters[characterId]);
+  const allCharacters = useCharacterStore((s) => s.characters);
   const currentGoal = useDebugStore((s) => s.currentGoal);
 
-  const persona = character?.core;
-  const goals = character
-    ? { longTerm: character.longTermGoals, shortTerm: character.shortTermGoals }
-    : { longTerm: [], shortTerm: [] };
+  const charIds = Object.keys(allCharacters);
+  // POV character first, then NPCs
+  const sortedIds = [characterId, ...charIds.filter((id) => id !== characterId)];
 
   const toggleSection = (key: string) =>
     setExpandedSections((s) => ({ ...s, [key]: !s[key] }));
 
-  if (!persona) return null;
+  const toggleChar = (id: string) =>
+    setExpandedChars((s) => ({ ...s, [id]: !s[id] }));
 
-  // Collapsed state
+  if (charIds.length === 0) return null;
+
+  // Collapsed state — show initials of all characters
   if (!expanded) {
     return (
       <div style={styles.collapsed} onClick={() => setExpanded(true)}>
-        <span style={styles.collapsedInitial}>{persona.name.charAt(0)}</span>
+        {sortedIds.slice(0, 3).map((id) => {
+          const name = allCharacters[id]?.core?.name ?? '?';
+          const isPov = id === characterId;
+          return (
+            <span key={id} style={{
+              ...styles.collapsedInitial,
+              ...(isPov ? {} : { background: T.textTertiary }),
+            }}>
+              {name.charAt(0)}
+            </span>
+          );
+        })}
         <span style={styles.collapsedLabel}>角色</span>
       </div>
     );
   }
 
   // Count dynamic (runtime-generated) actions
-  const scriptActionCount = goapActions.filter((a) => !a.id.startsWith('dyn-')).length;
-  const dynamicActionCount = goapActions.length - scriptActionCount;
+  const dynamicActionCount = goapActions.filter((a) => a.id.startsWith('dyn-')).length;
 
   return (
     <aside style={styles.panel}>
       {/* Header */}
       <div style={styles.header}>
-        <span style={styles.headerTitle}>{persona.name}</span>
+        <span style={styles.headerTitle}>角色 ({charIds.length})</span>
         <button style={styles.collapseBtn} onClick={() => setExpanded(false)}><ChevronLeft size={14} /></button>
       </div>
 
       <div style={styles.scrollArea}>
-        {/* Persona info */}
-        <Section title="基本设定" sectionKey="persona" expanded={expandedSections.persona} toggle={toggleSection}>
-          {persona.background && (
-            <div style={styles.infoBlock}>
-              <span style={styles.infoLabel}>背景</span>
-              <p style={styles.infoText}>{persona.background}</p>
-            </div>
-          )}
-          {persona.appearance && (
-            <div style={styles.infoBlock}>
-              <span style={styles.infoLabel}>外貌</span>
-              <p style={styles.infoText}>{persona.appearance}</p>
-            </div>
-          )}
-          <div style={styles.infoBlock}>
-            <span style={styles.infoLabel}>说话风格</span>
-            <p style={styles.infoText}>{persona.speechStyle}</p>
-          </div>
-          {persona.values.length > 0 && (
-            <div style={styles.infoBlock}>
-              <span style={styles.infoLabel}>价值观</span>
-              <div style={styles.tagList}>
-                {persona.values.map((v, i) => (
-                  <span key={i} style={styles.tag}>{v}</span>
-                ))}
-              </div>
-            </div>
-          )}
-        </Section>
+        {sortedIds.map((charId) => {
+          const char = allCharacters[charId];
+          if (!char?.core) return null;
+          const isPov = charId === characterId;
+          const isCharExpanded = expandedChars[charId] ?? false;
+          const persona = char.core;
+          const goals = { longTerm: char.longTermGoals, shortTerm: char.shortTermGoals };
 
-        {/* Personality traits */}
-        <Section title="性格特质" sectionKey="traits" expanded={expandedSections.traits} toggle={toggleSection}>
-          {persona.personality.map((t, i) => (
-            <div key={i} style={styles.traitRow}>
-              <span style={styles.traitName}>{t.trait}</span>
-              <div style={styles.traitBar}>
-                <div
-                  style={{
-                    ...styles.traitFill,
-                    width: `${Math.round(t.intensity * 100)}%`,
-                  }}
-                />
+          return (
+            <div key={charId} style={styles.charBlock}>
+              {/* Character name header */}
+              <div
+                style={styles.charHeader}
+                onClick={() => toggleChar(charId)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {isCharExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                  <span style={{ ...styles.charName, color: isPov ? T.accent : T.textSecondary }}>
+                    {persona.name}
+                  </span>
+                  {isPov && <span style={styles.povBadge}>主视角</span>}
+                </div>
               </div>
-              <span style={styles.traitValue}>{Math.round(t.intensity * 100)}%</span>
-            </div>
-          ))}
-        </Section>
 
-        {/* Current goal */}
-        <Section title="当前目标" sectionKey="goals" expanded={expandedSections.goals} toggle={toggleSection}>
-          {currentGoal ? (
-            <div style={styles.goalCard}>
-              <p style={styles.goalWhat}>{currentGoal.what}</p>
-              <p style={styles.goalWhy}>{currentGoal.why}</p>
-              <div style={styles.goalMeta}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><MapPin size={10} /> {currentGoal.where}</span>
-                {currentGoal.when && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Clock size={10} /> {currentGoal.when}</span>}
-              </div>
-              {currentGoal.who.length > 0 && (
-                <div style={styles.goalMeta}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Users size={10} /> {currentGoal.who.join(', ')}</span>
+              {isCharExpanded && (
+                <div style={styles.charBody}>
+                  {/* Persona info */}
+                  <div style={styles.infoBlock}>
+                    <span style={styles.infoLabel}>背景</span>
+                    <p style={styles.infoText}>{persona.background}</p>
+                  </div>
+                  {persona.appearance && (
+                    <div style={styles.infoBlock}>
+                      <span style={styles.infoLabel}>外貌</span>
+                      <p style={styles.infoText}>{persona.appearance}</p>
+                    </div>
+                  )}
+                  <div style={styles.infoBlock}>
+                    <span style={styles.infoLabel}>说话风格</span>
+                    <p style={styles.infoText}>{persona.speechStyle}</p>
+                  </div>
+
+                  {/* Traits */}
+                  {persona.personality.map((t, i) => (
+                    <div key={i} style={styles.traitRow}>
+                      <span style={styles.traitName}>{t.trait}</span>
+                      <div style={styles.traitBar}>
+                        <div style={{ ...styles.traitFill, width: `${Math.round(t.intensity * 100)}%` }} />
+                      </div>
+                      <span style={styles.traitValue}>{Math.round(t.intensity * 100)}%</span>
+                    </div>
+                  ))}
+
+                  {/* Values */}
+                  {persona.values.length > 0 && (
+                    <div style={styles.infoBlock}>
+                      <span style={styles.infoLabel}>价值观</span>
+                      <div style={styles.tagList}>
+                        {persona.values.map((v, i) => (
+                          <span key={i} style={styles.tag}>{v}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* POV-only sections: goals + actions */}
+                  {isPov && (
+                    <>
+                      <Section title="当前目标" sectionKey="goals" expanded={expandedSections.goals} toggle={toggleSection}>
+                        {currentGoal ? (
+                          <div style={styles.goalCard}>
+                            <p style={styles.goalWhat}>{currentGoal.what}</p>
+                            <p style={styles.goalWhy}>{currentGoal.why}</p>
+                            <div style={styles.goalMeta}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><MapPin size={10} /> {currentGoal.where}</span>
+                              {currentGoal.when && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Clock size={10} /> {currentGoal.when}</span>}
+                            </div>
+                            {currentGoal.who.length > 0 && (
+                              <div style={styles.goalMeta}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Users size={10} /> {currentGoal.who.join(', ')}</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p style={styles.emptyText}>等待推理...</p>
+                        )}
+                        {goals.longTerm.length > 0 && (
+                          <div style={styles.longTermBlock}>
+                            <span style={styles.infoLabel}>长期目标</span>
+                            {goals.longTerm.map((g, i) => (
+                              <div key={i} style={styles.longTermItem}>
+                                <span style={styles.longTermPriority}>P{g.priority}</span>
+                                <span style={styles.longTermDesc}>{g.description}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </Section>
+
+                      <Section
+                        title={`动作库 (${goapActions.length})`}
+                        sectionKey="actions"
+                        expanded={expandedSections.actions}
+                        toggle={toggleSection}
+                      >
+                        {goapActions.map((action) => (
+                          <div key={action.id} style={styles.actionCard}>
+                            <div style={styles.actionHeader}>
+                              <span style={styles.actionName}>{action.name}</span>
+                              {action.id.startsWith('dyn-') && (
+                                <span style={styles.dynamicBadge}>习得</span>
+                              )}
+                            </div>
+                            <p style={styles.actionDesc}>{action.description}</p>
+                            <div style={styles.actionMeta}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Timer size={10} /> {action.timeCost}m</span>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Coins size={10} /> {action.cost}</span>
+                            </div>
+                          </div>
+                        ))}
+                        {dynamicActionCount > 0 && (
+                          <p style={styles.dynamicNote}>
+                            其中 {dynamicActionCount} 个为运行时习得
+                          </p>
+                        )}
+                      </Section>
+                    </>
+                  )}
+
+                  {/* NPC long-term goals (simplified) */}
+                  {!isPov && goals.longTerm.length > 0 && (
+                    <div style={styles.longTermBlock}>
+                      <span style={styles.infoLabel}>目标</span>
+                      {goals.longTerm.map((g, i) => (
+                        <div key={i} style={styles.longTermItem}>
+                          <span style={styles.longTermPriority}>P{g.priority}</span>
+                          <span style={styles.longTermDesc}>{g.description}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          ) : (
-            <p style={styles.emptyText}>等待推理...</p>
-          )}
-          {goals.longTerm.length > 0 && (
-            <div style={styles.longTermBlock}>
-              <span style={styles.infoLabel}>长期目标</span>
-              {goals.longTerm.map((g, i) => (
-                <div key={i} style={styles.longTermItem}>
-                  <span style={styles.longTermPriority}>P{g.priority}</span>
-                  <span style={styles.longTermDesc}>{g.description}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </Section>
-
-        {/* GOAP Actions */}
-        <Section
-          title={`动作库 (${goapActions.length})`}
-          sectionKey="actions"
-          expanded={expandedSections.actions}
-          toggle={toggleSection}
-        >
-          {goapActions.map((action) => (
-            <div key={action.id} style={styles.actionCard}>
-              <div style={styles.actionHeader}>
-                <span style={styles.actionName}>{action.name}</span>
-                {action.id.startsWith('dyn-') && (
-                  <span style={styles.dynamicBadge}>习得</span>
-                )}
-              </div>
-              <p style={styles.actionDesc}>{action.description}</p>
-              <div style={styles.actionMeta}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Timer size={10} /> {action.timeCost}m</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Coins size={10} /> {action.cost}</span>
-              </div>
-            </div>
-          ))}
-          {dynamicActionCount > 0 && (
-            <p style={styles.dynamicNote}>
-              其中 {dynamicActionCount} 个为运行时习得
-            </p>
-          )}
-        </Section>
+          );
+        })}
       </div>
     </aside>
   );
@@ -273,6 +325,29 @@ const styles: Record<string, React.CSSProperties> = {
   scrollArea: {
     flex: 1,
     overflowY: 'auto',
+  },
+  charBlock: {
+    borderBottom: `1px solid ${T.border}`,
+  },
+  charHeader: {
+    padding: '8px 12px',
+    cursor: 'pointer',
+    background: T.bg,
+  },
+  charName: {
+    fontSize: '12px',
+    fontWeight: 500,
+  },
+  povBadge: {
+    padding: '1px 6px',
+    background: T.accentMuted,
+    borderRadius: T.radiusPill,
+    fontSize: '9px',
+    color: T.accent,
+    fontWeight: 500,
+  },
+  charBody: {
+    padding: '6px 12px 10px',
   },
   section: {
     borderBottom: `1px solid ${T.border}`,

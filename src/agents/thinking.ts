@@ -49,7 +49,7 @@ export async function runThinking(input: ThinkingInput): Promise<ThinkingResult>
 - 名字：${input.characterPersona.name}
 - 性格：${input.characterPersona.personality.map((p) => `${p.trait}(${p.intensity})`).join('、')}
 - 说话风格：${input.characterPersona.speechStyle}
-- 背景：${input.characterPersona.background}
+- 背景：${input.characterPersona.background}${input.characterPersona.dialogueExamples?.length ? '\n\n内心独白风格参考（注意：这些是对话示例，内心独白应更私密、更真实）：\n' + input.characterPersona.dialogueExamples.map((ex) => `  「${ex}」`).join('\n') : ''}
 
 当前场景摘要：
 ${input.recentScenesSummary || '（无）'}

@@ -10,7 +10,7 @@ import {
   DEFAULT_BASE_URLS,
   DEFAULT_MODEL_NAMES,
 } from './model-config-store';
-import type { ModelProtocol, ModelConfig } from './model-config-store';
+import type { ModelProtocol, ModelConfig, MemoryProvider } from './model-config-store';
 import { T } from '../theme';
 
 const PROTOCOLS: { value: ModelProtocol; label: string }[] = [
@@ -23,10 +23,13 @@ const PROTOCOLS: { value: ModelProtocol; label: string }[] = [
 export function ModelConfigPanel() {
   const chatModel = useModelConfigStore((s) => s.chatModel);
   const embeddingModel = useModelConfigStore((s) => s.embeddingModel);
+  const memoryConfig = useModelConfigStore((s) => s.memoryConfig);
   const setChatModel = useModelConfigStore((s) => s.setChatModel);
   const setEmbeddingModel = useModelConfigStore((s) => s.setEmbeddingModel);
+  const setMemoryConfig = useModelConfigStore((s) => s.setMemoryConfig);
   const save = useModelConfigStore((s) => s.save);
   const [saved, setSaved] = useState(false);
+  const [showMem0Key, setShowMem0Key] = useState(false);
 
   const handleSave = () => {
     save();
@@ -59,6 +62,52 @@ export function ModelConfigPanel() {
         }}
         defaultModelKey="embedding"
       />
+
+      {/* Memory Module */}
+      <div style={styles.slotCard}>
+        <h3 style={styles.slotTitle}>记忆模块</h3>
+        <div style={styles.field}>
+          <label style={styles.fieldLabel}>记忆引擎</label>
+          <select
+            style={styles.select}
+            value={memoryConfig.provider}
+            onChange={(e) => {
+              setMemoryConfig({ provider: e.target.value as MemoryProvider });
+              setSaved(false);
+            }}
+          >
+            <option value="builtin">内置引擎（关键词匹配）</option>
+            <option value="mem0">Mem0 Cloud（语义记忆）</option>
+          </select>
+        </div>
+
+        {memoryConfig.provider === 'mem0' && (
+          <div style={styles.field}>
+            <label style={styles.fieldLabel}>Mem0 API Key</label>
+            <div style={styles.keyRow}>
+              <input
+                style={{ ...styles.input, flex: 1 }}
+                type={showMem0Key ? 'text' : 'password'}
+                value={memoryConfig.mem0ApiKey}
+                onChange={(e) => {
+                  setMemoryConfig({ mem0ApiKey: e.target.value });
+                  setSaved(false);
+                }}
+                placeholder="m0-..."
+              />
+              <button
+                style={styles.toggleKeyBtn}
+                onClick={() => setShowMem0Key(!showMem0Key)}
+              >
+                {showMem0Key ? '隐藏' : '显示'}
+              </button>
+            </div>
+            <span style={{ ...styles.envHint, color: T.textTertiary }}>
+              切换记忆引擎需要重新开始游戏才生效
+            </span>
+          </div>
+        )}
+      </div>
 
       <button
         style={{

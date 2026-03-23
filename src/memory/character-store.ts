@@ -24,6 +24,7 @@ interface CharacterMemoryStore {
     status: ShortTermGoal['status'],
   ): void;
   applyPersonaShift(characterId: string, shift: PersonaShift): void;
+  applyGoalChanges(characterId: string, addGoals?: LongTermGoal[], removeGoalIds?: string[]): void;
 }
 
 export const useCharacterStore = create<CharacterMemoryStore>()((set, get) => ({
@@ -103,6 +104,37 @@ export const useCharacterStore = create<CharacterMemoryStore>()((set, get) => ({
             ...char,
             personaShifts: [...char.personaShifts, shift],
           },
+        },
+      };
+    });
+  },
+
+  applyGoalChanges(characterId, addGoals, removeGoalIds) {
+    set((s) => {
+      const char = s.characters[characterId];
+      if (!char) return s;
+
+      let goals = [...char.longTermGoals];
+
+      // Remove goals by ID
+      if (removeGoalIds?.length) {
+        goals = goals.filter((g) => !removeGoalIds.includes(g.id));
+      }
+
+      // Add new goals (skip duplicates by ID)
+      if (addGoals?.length) {
+        const existingIds = new Set(goals.map((g) => g.id));
+        for (const g of addGoals) {
+          if (!existingIds.has(g.id)) {
+            goals.push(g);
+          }
+        }
+      }
+
+      return {
+        characters: {
+          ...s.characters,
+          [characterId]: { ...char, longTermGoals: goals },
         },
       };
     });

@@ -133,4 +133,30 @@ export class Timeline {
   hasFrames(event: WorldEvent): boolean {
     return Array.isArray(event.frames) && event.frames.length > 0;
   }
+
+  /**
+   * 检查当前章节的所有事件是否都已消费（时间已过）
+   */
+  allEventsConsumed(): boolean {
+    return this.events.length > 0 && this.events.every((e) => e.time <= this.currentTime);
+  }
+
+  /**
+   * 替换事件和地点（章节切换时使用）
+   * 重置时间指针到新事件的起点之前。
+   */
+  replaceEvents(
+    events: WorldEvent[],
+    locations: Array<{ id: string; name: string }>,
+    initialTime?: number,
+  ): void {
+    this.events = events.sort((a, b) => a.time - b.time);
+    this.locations = locations;
+    if (initialTime !== undefined) {
+      this.currentTime = initialTime;
+    } else if (this.events.length > 0) {
+      // 将时间设置到第一个事件之前（确保 peekNextEvent 能返回它）
+      this.currentTime = Math.min(this.currentTime, this.events[0].time - 1);
+    }
+  }
 }

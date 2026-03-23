@@ -160,26 +160,106 @@ export function DebugDrawer() {
           )}
         </Section>
 
-        {/* Agent Traces */}
-        <Section title="Agent Trace" section="traces" expanded={expandedSections.traces} toggle={toggle}>
-          {state.traces.length > 0 ? (
-            <div>
-              {state.traces.slice(-5).reverse().map((t, i) => (
-                <div key={i} style={styles.traceItem}>
-                  <span style={styles.traceAgent}>{t.agent}</span>
-                  <span style={styles.traceDuration}>{(t.duration / 1000).toFixed(1)}s</span>
-                  <span style={styles.traceTokens}>
-                    {t.inputTokens + t.outputTokens} tok
-                  </span>
+        {/* Unified Call Timeline: Agent Traces + Memory Logs merged by timestamp */}
+        <Section title={`调用时间线 (${state.traces.length + state.memoryLogs.length})`} section="traces" expanded={expandedSections.traces} toggle={toggle}>
+          {(() => {
+            // Merge traces and memory logs into a single sorted timeline
+            type TimelineItem =
+              | { kind: 'trace'; data: typeof state.traces[0] }
+              | { kind: 'memory'; data: typeof state.memoryLogs[0] };
+
+            const items: TimelineItem[] = [
+              ...state.traces.map((t) => ({ kind: 'trace' as const, data: t })),
+              ...state.memoryLogs.map((m) => ({ kind: 'memory' as const, data: m })),
+            ];
+            items.sort((a, b) => {
+              const ta = a.kind === 'trace' ? a.data.timestamp : a.data.timestamp;
+              const tb = b.kind === 'trace' ? b.data.timestamp : b.data.timestamp;
+              return ta - tb;
+            });
+
+            // Show last 20 items
+            const recent = items.slice(-20);
+
+            if (recent.length === 0) {
+              return <div style={styles.empty}>无调用记录</div>;
+            }
+
+            return (
+              <div>
+                {recent.map((item, i) => {
+                  if (item.kind === 'trace') {
+                    const t = item.data;
+                    const time = new Date(t.timestamp).toLocaleTimeString('zh-CN', { hour12: false });
+                    return (
+                      <div key={`t-${i}`} style={styles.traceEntry}>
+                        <div style={styles.traceItem}>
+                          <span style={{ color: T.textMuted, fontSize: '10px' }}>{time}</span>
+                          <span style={styles.traceAgent}>{t.agent}</span>
+                          <span style={styles.traceDuration}>{(t.duration / 1000).toFixed(1)}s</span>
+                          <span style={styles.traceTokens}>
+                            {t.inputTokens + t.outputTokens} tok
+                          </span>
+                        </div>
+                        {t.inputSummary && (
+                          <div style={styles.traceSummary}>
+                            <span style={{ color: T.info }}>IN</span> {t.inputSummary}
+                          </div>
+                        )}
+                        {t.outputSummary && (
+                          <div style={styles.traceSummary}>
+                            <span style={{ color: T.success }}>OUT</span> {t.outputSummary}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  } else {
+                    const log = item.data;
+                    const time = new Date(log.timestamp).toLocaleTimeString('zh-CN', { hour12: false });
+                    const methodColor = log.error ? T.error
+                      : log.method === 'assemble' ? T.gold
+                      : log.method === 'narrative.assemble' ? T.gold
+                      : log.method === 'recallMemories' ? T.info
+                      : log.method === 'ingest' ? T.success
+                      : log.method === 'narrative.ingest' ? T.accent
+                      : T.textSecondary;
+                    return (
+                      <div key={`m-${i}`} style={styles.memLogEntry}>
+                        <div style={styles.memLogHeader}>
+                          <span style={{ color: T.textMuted }}>{time}</span>
+                          <span style={{ color: methodColor, fontWeight: 500 }}>{log.method}</span>
+                          <span style={{ color: T.textMuted }}>{log.durationMs}ms</span>
+                          {log.error && <span style={{ color: T.error }}>ERR</span>}
+                        </div>
+                        {log.input != null && (
+                          <div style={styles.memLogDetail}>
+                            <span style={styles.memLogLabel}>IN</span>
+                            <span style={styles.memLogValue}>{formatLogData(log.input)}</span>
+                          </div>
+                        )}
+                        {log.output != null && (
+                          <div style={styles.memLogDetail}>
+                            <span style={{ ...styles.memLogLabel, color: T.success }}>OUT</span>
+                            <span style={styles.memLogValue}>{formatLogData(log.output)}</span>
+                          </div>
+                        )}
+                        {log.error && (
+                          <div style={styles.memLogDetail}>
+                            <span style={{ ...styles.memLogLabel, color: T.error }}>ERR</span>
+                            <span style={{ ...styles.memLogValue, color: T.error }}>{log.error}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                })}
+                <div style={styles.traceTotal}>
+                  总Token：{state.traces.reduce((sum, t) => sum + t.inputTokens + t.outputTokens, 0).toLocaleString()}
+                  {' · '}记忆调用：{state.memoryLogs.length}次
                 </div>
-              ))}
-              <div style={styles.traceTotal}>
-                总Token：{state.traces.reduce((sum, t) => sum + t.inputTokens + t.outputTokens, 0).toLocaleString()}
               </div>
-            </div>
-          ) : (
-            <div style={styles.empty}>无trace数据</div>
-          )}
+            );
+          })()}
         </Section>
 
         {/* Errors */}
@@ -222,6 +302,32 @@ function Section({
       {expanded && <div style={styles.sectionBody}>{children}</div>}
     </div>
   );
+}
+
+function formatLogData(data: unknown): string {
+  if (!data || typeof data !== 'object') return String(data ?? '');
+  const obj = data as Record<string, unknown>;
+  const parts: string[] = [];
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined || v === null) continue;
+    if (Array.isArray(v)) {
+      if (v.length === 0) continue;
+      // For arrays of objects with content field (recalled items)
+      if (typeof v[0] === 'object' && v[0] !== null && 'content' in (v[0] as Record<string, unknown>)) {
+        parts.push(`${k}: [${v.length}] ${v.map((item: Record<string, unknown>) => String(item.content ?? '').slice(0, 40)).join(' | ')}`);
+      } else if (typeof v[0] === 'string') {
+        // String arrays (e.g. recalledItems from assemble output)
+        parts.push(`${k}: [${v.length}] ${v.map((s: string) => s.slice(0, 40)).join(' | ')}`);
+      } else {
+        parts.push(`${k}: [${v.length}]`);
+      }
+    } else if (typeof v === 'string' && v.length > 50) {
+      parts.push(`${k}: ${v.slice(0, 50)}...`);
+    } else {
+      parts.push(`${k}: ${v}`);
+    }
+  }
+  return parts.join(', ');
 }
 
 function Row({ label, value }: { label: string; value: string | number }) {
@@ -356,14 +462,54 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
     padding: '2px 0',
   },
+  traceEntry: {
+    borderBottom: `1px solid ${T.border}`,
+    padding: '3px 0',
+  },
   traceAgent: { color: T.gold, flex: 1 },
   traceDuration: { color: T.success },
   traceTokens: { color: T.textTertiary },
+  traceSummary: {
+    fontSize: '10px',
+    color: T.textTertiary,
+    paddingLeft: '12px',
+    lineHeight: '1.4',
+  },
   traceTotal: { color: T.accent, marginTop: '4px', fontSize: '11px' },
   errorItem: {
     color: T.error,
     padding: '2px 0',
     fontSize: '11px',
     lineHeight: '1.4',
+  },
+  // ─── Memory log styles ─────────────
+  memLogEntry: {
+    borderBottom: `1px solid ${T.border}`,
+    padding: '4px 0',
+    marginBottom: '2px',
+  },
+  memLogHeader: {
+    display: 'flex',
+    gap: '6px',
+    alignItems: 'center',
+    fontSize: '11px',
+  },
+  memLogDetail: {
+    display: 'flex',
+    gap: '4px',
+    padding: '1px 0 1px 12px',
+    fontSize: '10px',
+    lineHeight: '1.4',
+  },
+  memLogLabel: {
+    color: T.info,
+    fontWeight: 600,
+    flexShrink: 0,
+    width: '24px',
+  },
+  memLogValue: {
+    color: T.textTertiary,
+    wordBreak: 'break-all' as const,
+    flex: 1,
   },
 };

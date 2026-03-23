@@ -12,6 +12,7 @@ import {
   Brain,
   Quote,
   Circle,
+  GitBranch,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -56,7 +57,7 @@ export function EditorTree() {
                   'flex items-center gap-1.5 w-full px-2 py-1 rounded-md text-left hover:bg-accent/50 transition-colors',
                   selectedNode === chId && 'bg-accent text-accent-foreground',
                 )}
-                onClick={() => selectNode(chId)}
+                onClick={() => { selectNode(chId); if (!chExpanded) toggleExpand(chId); }}
                 onDoubleClick={() => toggleExpand(chId)}
               >
                 <span
@@ -67,8 +68,15 @@ export function EditorTree() {
                     ? <ChevronDown className="h-3.5 w-3.5" />
                     : <ChevronRight className="h-3.5 w-3.5" />}
                 </span>
-                <BookOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                {chapter.next && typeof chapter.next === 'object'
+                  ? <GitBranch className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
+                  : <BookOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
                 <span className="truncate">{chapter.chapter}</span>
+                {chapter.id && (
+                  <span className="text-[9px] text-muted-foreground font-mono shrink-0">
+                    {chapter.id}
+                  </span>
+                )}
                 <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0">
                   {chapter.events.length}
                 </Badge>
