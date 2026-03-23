@@ -13,7 +13,7 @@
  *   - Thinking flow: player input triggers memory recall + inner monologue
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { SceneOutput } from '../memory/schemas';
 import type { IFullContextEngine } from '../memory/context-engine';
 import { usePlayerStore } from '../player/player-store';
@@ -92,6 +92,20 @@ export function GameRenderer({
   const [currentScene, setCurrentScene] = useState<SceneOutput | null>(null);
   const historyRef = useRef<HTMLDivElement>(null);
   const lastScenesRef = useRef<SceneOutput[]>([]);
+
+  // Build character ID → display name mapping
+  const characters = useCharacterStore((s) => s.characters);
+  const speakerNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const [id, char] of Object.entries(characters)) {
+      if (char.core) map[id] = char.core.name;
+    }
+    return map;
+  }, [characters]);
+  const resolveSpeaker = useCallback((id: string | null) => {
+    if (!id) return null;
+    return speakerNameMap[id] || id;
+  }, [speakerNameMap]);
   // No extra state needed — prompt markers are inserted as special SceneOutput entries in history
 
   const autoAdvance = usePlayerStore((s) => s.autoAdvance);
@@ -381,7 +395,7 @@ export function GameRenderer({
         {/* History scroll */}
         <div ref={historyRef} style={styles.history}>
           {history.map((h, i) => (
-            <HistoryEntry key={i} scene={h} />
+            <HistoryEntry key={i} scene={h} resolveSpeaker={resolveSpeaker} />
           ))}
         </div>
       </div>
@@ -411,7 +425,7 @@ export function GameRenderer({
                   <Brain size={14} style={{ color: T.info, flexShrink: 0 }} />
                 )}
                 <span style={isThought ? styles.thoughtSpeakerName : styles.speakerName}>
-                  {currentScene.speaker}
+                  {resolveSpeaker(currentScene.speaker)}
                   {isThought && <span style={styles.thoughtLabel}>(内心)</span>}
                 </span>
                 {currentScene.emotion && !isThought && (
@@ -515,7 +529,7 @@ function DebugPromptEntry({ prompt }: { prompt: string }) {
   );
 }
 
-function HistoryEntry({ scene }: { scene: SceneOutput }) {
+function HistoryEntry({ scene, resolveSpeaker }: { scene: SceneOutput; resolveSpeaker: (id: string | null) => string | null }) {
   const text = scene.dialogue || scene.narration || '';
   const isThought = scene.type === 'thought';
   const isPlayerInput = scene.type === 'player-input';
@@ -550,7 +564,7 @@ function HistoryEntry({ scene }: { scene: SceneOutput }) {
         <Brain size={11} style={{ color: T.info, flexShrink: 0, marginTop: 3 }} />
         <p style={styles.historyThoughtText}>
           {scene.speaker && (
-            <span style={styles.historyThoughtSpeaker}>{scene.speaker}(内心)：</span>
+            <span style={styles.historyThoughtSpeaker}>{resolveSpeaker(scene.speaker)}(内心)：</span>
           )}
           {text}
         </p>
@@ -565,7 +579,7 @@ function HistoryEntry({ scene }: { scene: SceneOutput }) {
       )}
       {scene.speaker ? (
         <p style={styles.historyDialogue}>
-          <span style={styles.speakerName}>{scene.speaker}</span>
+          <span style={styles.speakerName}>{resolveSpeaker(scene.speaker)}</span>
           ：{text}
         </p>
       ) : (

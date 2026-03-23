@@ -174,6 +174,17 @@ export function App() {
     const ts = Date.now();
     const timeStr = new Date().toLocaleString('zh-CN');
 
+    // Build speaker ID → display name map for export
+    const charStore = useCharacterStore.getState();
+    const speakerMap: Record<string, string> = {};
+    for (const [id, char] of Object.entries(charStore.characters)) {
+      if (char.core) speakerMap[id] = char.core.name;
+    }
+    const resolveName = (id: string | null) => {
+      if (!id || id === 'null') return null;
+      return speakerMap[id] || id;
+    };
+
     const formatScenes = (includePrompts: boolean) => {
       const lines: string[] = [];
       lines.push(`# ${name}${includePrompts ? '（含 Director Prompt）' : ''}\n`);
@@ -185,7 +196,7 @@ export function App() {
 
         if (typeStr === 'debug-prompt') {
           if (includePrompts) {
-            lines.push(`\n<details><summary>🔧 Director Prompt</summary>\n\n\`\`\`\n${scene.dialogue || ''}\n\`\`\`\n</details>\n`);
+            lines.push(`\n<details><summary>Director Prompt</summary>\n\n\`\`\`\n${scene.dialogue || ''}\n\`\`\`\n</details>\n`);
           }
           continue;
         }
@@ -196,7 +207,7 @@ export function App() {
         }
 
         if (typeStr === 'player-input') {
-          lines.push(`> 🎮 玩家：${scene.dialogue || ''}\n`);
+          lines.push(`> 玩家：${scene.dialogue || ''}\n`);
           continue;
         }
 
@@ -204,10 +215,10 @@ export function App() {
           lines.push(`*${scene.narration}*\n`);
         }
 
-        const speaker = scene.speaker && scene.speaker !== 'null' ? scene.speaker : null;
+        const speaker = resolveName(scene.speaker);
 
         if (scene.type === 'thought') {
-          lines.push(`💭 ${speaker ?? ''}（内心）：${scene.dialogue || ''}\n`);
+          lines.push(`${speaker ?? ''}（内心）：${scene.dialogue || ''}\n`);
         } else if (speaker) {
           lines.push(`**${speaker}**：${scene.dialogue || ''}\n`);
         } else {
